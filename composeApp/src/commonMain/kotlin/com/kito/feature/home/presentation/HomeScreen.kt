@@ -503,6 +503,18 @@ fun JoinELabsBanner(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Text switcher state
+    var currentTextIndex by remember { mutableStateOf(0) }
+    val texts = listOf("JOIN E-LABS", "WE ARE RECRUITING")
+
+    // Switch text every 3 seconds
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3000)
+            currentTextIndex = (currentTextIndex + 1) % texts.size
+        }
+    }
+
     // Infinite shimmer animation
     val infiniteTransition = rememberInfiniteTransition()
 
@@ -591,16 +603,37 @@ fun JoinELabsBanner(
                 interactionSource = remember { MutableInteractionSource() }
             )
     ) {
-        Text(
-            text = "JOIN E-LABS",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 26.sp,
-                letterSpacing = 2.sp,
-                fontFamily = FontFamily.Serif
-            ),
-            color = colors.accentOrangeStart,
+        // Animated text crossfade
+        AnimatedContent(
+            targetState = currentTextIndex,
+            transitionSpec = {
+                (slideInHorizontally(
+                    initialOffsetX = { fullWidth -> fullWidth },
+                    animationSpec = tween(600, easing = FastOutSlowInEasing)
+                ) + fadeIn(
+                    animationSpec = tween(400)
+                )).togetherWith(
+                    slideOutHorizontally(
+                        targetOffsetX = { fullWidth -> -fullWidth },
+                        animationSpec = tween(600, easing = FastOutSlowInEasing)
+                    ) + fadeOut(
+                        animationSpec = tween(400)
+                    )
+                )
+            },
             modifier = Modifier.align(Alignment.Center)
-        )
+        ) { index ->
+            Text(
+                text = texts[index],
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = if (texts[index] == "JOIN E-LABS") 26.sp else 22.sp,
+                    letterSpacing = 2.sp,
+                    fontFamily = FontFamily.Serif
+                ),
+                color = colors.accentOrangeStart,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
     }
 }
