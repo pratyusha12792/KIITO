@@ -1,7 +1,15 @@
 package com.kito.feature.schedule.notification
 
 import com.kito.core.database.entity.StudentSectionEntity
-import platform.Foundation.*
+import platform.Foundation.NSCalendar
+import platform.Foundation.NSCalendarUnitDay
+import platform.Foundation.NSCalendarUnitHour
+import platform.Foundation.NSCalendarUnitMinute
+import platform.Foundation.NSCalendarUnitMonth
+import platform.Foundation.NSCalendarUnitWeekday
+import platform.Foundation.NSCalendarUnitYear
+import platform.Foundation.NSDate
+import platform.Foundation.timeIntervalSince1970
 
 fun classStartMillis(section: StudentSectionEntity): Long {
     val calendar = NSCalendar.currentCalendar

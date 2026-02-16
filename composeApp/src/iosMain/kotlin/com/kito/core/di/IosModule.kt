@@ -1,11 +1,10 @@
 
 package com.kito.core.di
 
-import com.kito.core.datastore.IosPrefsRepository
-
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.kito.core.database.AppDB
+import com.kito.core.datastore.IosPrefsRepository
 import com.kito.core.network.supabase.createSupabaseClient
 import com.kito.core.platform.AppSyncTrigger
 import com.kito.core.platform.ConnectivityObserver

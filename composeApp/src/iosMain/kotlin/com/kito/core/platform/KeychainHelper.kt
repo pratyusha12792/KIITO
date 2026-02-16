@@ -6,7 +6,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import platform.CoreFoundation.CFDictionaryCreateMutable
-import platform.CoreFoundation.CFDictionaryRef
 import platform.CoreFoundation.CFDictionarySetValue
 import platform.CoreFoundation.CFRelease
 import platform.CoreFoundation.CFStringCreateWithCString
@@ -26,6 +25,8 @@ import platform.Security.SecItemAdd
 import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
 import platform.Security.SecItemUpdate
+import platform.Security.errSecDuplicateItem
+import platform.Security.errSecSuccess
 import platform.Security.kSecAttrAccount
 import platform.Security.kSecAttrService
 import platform.Security.kSecClass
@@ -34,8 +35,6 @@ import platform.Security.kSecMatchLimit
 import platform.Security.kSecMatchLimitOne
 import platform.Security.kSecReturnData
 import platform.Security.kSecValueData
-import platform.Security.errSecSuccess
-import platform.Security.errSecDuplicateItem
 
 @OptIn(ExperimentalForeignApi::class)
 object KeychainHelper {

@@ -4,7 +4,6 @@ import com.kito.core.database.repository.StudentSectionRepository
 import com.kito.core.datastore.PrefsRepository
 import com.kito.core.platform.areNotificationsEnabled
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.first
 
 class IosNotificationController(
     private val scheduler: IosClassNotificationScheduler,

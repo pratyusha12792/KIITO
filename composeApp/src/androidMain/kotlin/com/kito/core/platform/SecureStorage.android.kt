@@ -14,7 +14,6 @@ import com.google.crypto.tink.integration.android.AndroidKeysetManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlin.jvm.Throws
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "encrypted_data_store")
 

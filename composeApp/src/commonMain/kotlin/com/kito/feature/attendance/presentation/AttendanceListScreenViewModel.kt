@@ -9,8 +9,6 @@ import com.kito.core.platform.ConnectivityObserver
 import com.kito.core.platform.SecureStorage
 import com.kito.core.presentation.components.AppSyncUseCase
 import com.kito.core.presentation.components.state.SyncUiState
-import io.ktor.util.logging.Logger
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

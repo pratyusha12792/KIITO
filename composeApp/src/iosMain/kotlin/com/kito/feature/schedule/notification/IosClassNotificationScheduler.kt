@@ -16,8 +16,6 @@ import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNUserNotificationCenter
 
-import platform.UserNotifications.UNTimeIntervalNotificationTrigger
-
 class IosClassNotificationScheduler {
 
     fun scheduleMidnightRefresh() {

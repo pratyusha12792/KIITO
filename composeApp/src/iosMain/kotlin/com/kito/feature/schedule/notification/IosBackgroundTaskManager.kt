@@ -5,17 +5,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import platform.BackgroundTasks.BGAppRefreshTask
-import platform.BackgroundTasks.BGTask
-import platform.BackgroundTasks.BGTaskScheduler
 import platform.BackgroundTasks.BGAppRefreshTaskRequest
+import platform.BackgroundTasks.BGTaskScheduler
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
 import platform.Foundation.NSCalendarUnitMonth
 import platform.Foundation.NSCalendarUnitYear
 import platform.Foundation.NSDate
-import platform.Foundation.NSError
-import platform.Foundation.NSLog
-import platform.darwin.NSObject
 
 object IosBackgroundTaskManager {
 

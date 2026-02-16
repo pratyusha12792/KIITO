@@ -34,14 +34,13 @@ import com.kito.core.datastore.PrefsRepository
 import com.kito.core.platform.AppConfig
 import com.kito.core.platform.ESP
 import com.kito.core.platform.SecureStorage
+import com.kito.core.presentation.navigation3.Routes
 import com.kito.core.presentation.theme.KitoTheme
 import com.kito.feature.app.presentation.MainUI
 import com.kito.feature.schedule.notification.NotificationPipelineController
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
-import com.kito.core.presentation.navigation3.Routes
-import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
 
