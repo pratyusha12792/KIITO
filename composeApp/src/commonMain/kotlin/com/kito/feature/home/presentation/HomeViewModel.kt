@@ -242,6 +242,19 @@ class HomeViewModel (
             .minByOrNull { it.second }
             ?.first
     }
+
+    fun postRecruitmentClick(){
+        viewModelScope.launch {
+            try {
+                val roll = prefs.userRollFlow.first()
+                supabaseRepository.postRecruitmentClick(roll)
+            }catch (e: Exception){
+                _syncEvents.emit(
+                    SyncUiState.Error(e.message?:"")
+                )
+            }
+        }
+    }
 }
 
 

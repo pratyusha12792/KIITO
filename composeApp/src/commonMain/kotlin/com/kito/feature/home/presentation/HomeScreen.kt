@@ -339,6 +339,7 @@ fun HomeScreen(
                                 JoinELabsBanner(
                                     colors = uiColors,
                                     onClick = {
+                                        viewmodel.postRecruitmentClick()
                                         haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                                         openUrl("https://recruit-teal-ten.vercel.app/")
                                     }

@@ -10,6 +10,7 @@ import com.kito.core.network.supabase.model.TeacherFuzzySearchModel
 import com.kito.core.network.supabase.model.TeacherModel
 import com.kito.core.network.supabase.model.TeacherScheduleByIDModel
 import com.kito.core.network.supabase.request.MidsemScheduleRequest
+import com.kito.core.network.supabase.request.RecruitmentClickRequest
 import com.kito.core.network.supabase.request.TeacherScheduleByIDRequest
 import com.kito.core.network.supabase.request.TeacherSearchRequest
 import io.ktor.client.HttpClient
@@ -89,9 +90,19 @@ class SupabaseRepository(
     }
 
     suspend fun getLatestAppVersion(platform: PlatformClass): List<LatestAppVersionModel> {
-        return client.get("https://bdhihisoovywjdqjvmae.supabase.co/rest/v1/app_version") {
+        return client.get("rest/v1/app_version") {
             parameter("platform","eq.${platform.value}")
             parameter("select","*")
         }.body()
+    }
+
+    suspend fun postRecruitmentClick(rollNo: String){
+        client.post("rest/v1/recruitment_clicks") {
+            setBody(
+                RecruitmentClickRequest(
+                    roll_number = rollNo
+                )
+            )
+        }
     }
 }
