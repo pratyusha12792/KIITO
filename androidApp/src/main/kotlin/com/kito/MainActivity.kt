@@ -1,15 +1,13 @@
 package com.kito
 
-import android.R
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +17,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.util.Consumer
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.play.core.appupdate.AppUpdateManager
@@ -31,8 +28,6 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.kito.core.datastore.PrefsRepository
-import com.kito.core.network.supabase.SupabaseRepository
-import com.kito.core.network.supabase.model.PlatformClass
 import com.kito.core.platform.AppConfig
 import com.kito.core.platform.ESP
 import com.kito.core.platform.SecureStorage
@@ -41,39 +36,31 @@ import com.kito.core.presentation.theme.KitoTheme
 import com.kito.feature.app.presentation.MainUI
 import com.kito.feature.schedule.notification.NotificationPipelineController
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
 
     private val prefs: PrefsRepository by inject()
 
-    private val supabaseRepo: SupabaseRepository by inject()
-
     private val eSP: ESP by inject()
 
     private val secureStorage: SecureStorage by inject()
-
-    private var currentUpdateType: Int = AppUpdateType.FLEXIBLE
 
     private val notificationPipelineController by lazy {
         NotificationPipelineController.get(applicationContext)
     }
     private lateinit var appUpdateManager: AppUpdateManager
 
-    private var lastCheckedTime = 0L
-    private val CHECK_INTERVAL = 5 * 60 * 1000 // 5 minutes
-
-    private val updateLauncher =
+    private val updateLauncher: ActivityResultLauncher<IntentSenderRequest> =
         registerForActivityResult(
             ActivityResultContracts.StartIntentSenderForResult()
         ) { result: ActivityResult ->
-            Log.d("UPDATE_FLOW", "Launcher result code: ${result.resultCode}")
+            if (result.resultCode != RESULT_OK) {
+                // User cancelled or update failed
+            }
         }
 
     private val installStateListener = InstallStateUpdatedListener { state ->
-        Log.d("UPDATE_FLOW", "Install state changed: ${state.installStatus()}")
-
         if (state.installStatus() == InstallStatus.DOWNLOADED) {
             showCompleteUpdateSnackbar()
         }
@@ -82,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        checkForUpdate()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -104,7 +92,6 @@ class MainActivity : ComponentActivity() {
             supabaseUrl = BuildConfig.SUPABASE_URL,
             supabaseAnonKey = BuildConfig.SUPABASE_ANON_KEY
         )
-
         setContent {
             var startDestination by remember { mutableStateOf<NavKey?>(null) }
             var deepLinkTarget by remember { mutableStateOf<String?>(null) }
@@ -149,7 +136,6 @@ class MainActivity : ComponentActivity() {
                 onDispose { removeOnNewIntentListener(listener) }
             }
             splashScreen.setKeepOnScreenCondition { !isReady }
-
             if (isReady) {
                 KitoTheme {
                     MainUI(
@@ -176,11 +162,16 @@ class MainActivity : ComponentActivity() {
 
         appUpdateManager.registerListener(installStateListener)
 
-        val now = System.currentTimeMillis()
-
-        if (now - lastCheckedTime > CHECK_INTERVAL) {
-            lastCheckedTime = now
-            checkForSupabaseVersion()
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.updateAvailability() ==
+                UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+            ) {
+                appUpdateManager.startUpdateFlowForResult(
+                    info,
+                    updateLauncher,
+                    AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
+                )
+            }
         }
     }
 
@@ -193,90 +184,32 @@ class MainActivity : ComponentActivity() {
 
     private fun showCompleteUpdateSnackbar() {
         Snackbar.make(
-            findViewById(R.id.content),
+            findViewById(android.R.id.content),
             "Update ready",
             Snackbar.LENGTH_INDEFINITE
         ).setAction("Restart") {
             appUpdateManager.completeUpdate()
         }.show()
     }
+    private fun checkForUpdate() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
 
-    private fun checkForSupabaseVersion() {
-        lifecycleScope.launch {
-            try {
-                val result = supabaseRepo
-                    .getLatestAppVersion(PlatformClass.ANDROID)
-                    .firstOrNull() ?: return@launch
+            if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
 
-                val currentCode = BuildConfig.VERSION_CODE
-                val latestCode = result.latest_version.toIntOrNull() ?: return@launch
-
-                if (latestCode <= currentCode) return@launch
-
-                currentUpdateType =
-                    if (result.force_update)
+                val updateType =
+                    if (info.updatePriority() == 5)
                         AppUpdateType.IMMEDIATE
                     else
                         AppUpdateType.FLEXIBLE
 
-                checkPlayCoreUpdate()
-
-            } catch (_: Exception) {
-                // Never block app if network fails
-            }
-        }
-    }
-    private fun checkPlayCoreUpdate() {
-
-        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
-
-            when {
-
-                // 🔴 Resume ongoing immediate update
-                info.updateAvailability() ==
-                        UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> {
-
+                if (info.isUpdateTypeAllowed(updateType)) {
                     appUpdateManager.startUpdateFlowForResult(
                         info,
                         updateLauncher,
-                        AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
+                        AppUpdateOptions.newBuilder(updateType).build()
                     )
-                }
-
-                // 🔴 Force Immediate every resume
-                currentUpdateType == AppUpdateType.IMMEDIATE &&
-                        info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-                        info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) -> {
-
-                    appUpdateManager.startUpdateFlowForResult(
-                        info,
-                        updateLauncher,
-                        AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
-                    )
-                }
-
-                // 🟢 Flexible logic
-                currentUpdateType == AppUpdateType.FLEXIBLE -> {
-
-                    // Already downloaded → show snackbar
-                    if (info.installStatus() == InstallStatus.DOWNLOADED) {
-                        showCompleteUpdateSnackbar()
-                    }
-
-                    // Show flexible dialog
-                    else if (
-                        info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-                        info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
-                    ) {
-                        appUpdateManager.startUpdateFlowForResult(
-                            info,
-                            updateLauncher,
-                            AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build()
-                        )
-                    }
                 }
             }
         }
     }
-
 }
