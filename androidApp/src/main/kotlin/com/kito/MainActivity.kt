@@ -1,6 +1,5 @@
 package com.kito
 
-import android.R
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -48,13 +47,9 @@ class MainActivity : ComponentActivity() {
 
     private val prefs: PrefsRepository by inject()
 
-    private val supabaseRepo: SupabaseRepository by inject()
-
     private val eSP: ESP by inject()
 
     private val secureStorage: SecureStorage by inject()
-
-    private var currentUpdateType: Int = AppUpdateType.FLEXIBLE
 
     private val notificationPipelineController by lazy {
         NotificationPipelineController.get(applicationContext)
@@ -78,6 +73,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        checkForUpdate()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -165,6 +161,7 @@ class MainActivity : ComponentActivity() {
             window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
         }
         appUpdateManager.registerListener(installStateListener)
+
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
             if (
                 info.updateAvailability() ==
@@ -173,14 +170,9 @@ class MainActivity : ComponentActivity() {
                 appUpdateManager.startUpdateFlowForResult(
                     info,
                     updateLauncher,
-                    AppUpdateOptions.newBuilder(currentUpdateType).build()
+                    AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build()
                 )
-                return@addOnSuccessListener
             }
-            checkForSupabaseVersion()
-        }
-        lifecycleScope.launch {
-            notificationPipelineController.sync()
         }
     }
 
@@ -192,7 +184,7 @@ class MainActivity : ComponentActivity() {
 
     private fun showCompleteUpdateSnackbar() {
         Snackbar.make(
-            findViewById(R.id.content),
+            findViewById(android.R.id.content),
             "Update ready",
             Snackbar.LENGTH_INDEFINITE
         ).setAction("Restart") {
@@ -200,56 +192,16 @@ class MainActivity : ComponentActivity() {
         }.show()
     }
 
-    private fun checkForSupabaseVersion() {
-        lifecycleScope.launch {
-            try {
-                val result = supabaseRepo
-                    .getLatestAppVersion(PlatformClass.ANDROID)
-                    .firstOrNull() ?: return@launch
-
-                val currentVersion = BuildConfig.VERSION_NAME
-
-                if (!isUpdateRequired(currentVersion, result.latest_version)) {
-                    return@launch
-                }
-
-                currentUpdateType =
-                    if (result.force_update)
-                        AppUpdateType.IMMEDIATE
-                    else
-                        AppUpdateType.FLEXIBLE
-
-                triggerPlayCoreUpdate(currentUpdateType)
-
-            } catch (_: Exception) {
-                // Never block app if network fails
-            }
-        }
-    }
-
-    private fun isUpdateRequired(current: String, latest: String): Boolean {
-        val currentParts = current.split(".").map { it.toInt() }
-        val latestParts = latest.split(".").map { it.toInt() }
-        for (i in 0 until maxOf(currentParts.size, latestParts.size)) {
-            val c = currentParts.getOrElse(i) { 0 }
-            val l = latestParts.getOrElse(i) { 0 }
-            if (l > c) return true
-            if (l < c) return false
-        }
-        return false
-    }
-
-    private fun triggerPlayCoreUpdate(updateType: Int) {
+    private fun checkForUpdate() {
         appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
-
             if (
                 info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-                info.isUpdateTypeAllowed(updateType)
+                info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
             ) {
                 appUpdateManager.startUpdateFlowForResult(
                     info,
                     updateLauncher,
-                    AppUpdateOptions.newBuilder(updateType).build()
+                    AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build()
                 )
             }
         }
