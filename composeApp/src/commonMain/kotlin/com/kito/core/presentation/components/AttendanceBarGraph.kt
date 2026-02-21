@@ -3,6 +3,7 @@ package com.kito.core.presentation.components
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -199,11 +200,12 @@ fun AttendanceBarCard(
                 ) {}
             }
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp)
+                    .fillMaxHeight(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 items(
                     if (sapLoggedIn) {
@@ -215,7 +217,7 @@ fun AttendanceBarCard(
                     Column(
                         modifier = Modifier
                             .fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.SpaceBetween,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         AttendanceBarGraph(
