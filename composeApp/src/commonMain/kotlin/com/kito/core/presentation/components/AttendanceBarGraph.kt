@@ -356,11 +356,19 @@ fun WaterAnimation(
     var waveShift by remember { mutableFloatStateOf(0f) }
 
     val colors = UIColors()
+//    val waterBrush = Brush.verticalGradient(
+//        0.0f to colors.accentOrangeEnd.copy(alpha = 0.9f),
+//        0.35f to colors.accentOrangeStart,
+//        0.75f to colors.progressAccent,
+//        1.0f to Color(0xFF5A2A05)
+//    )
+
     val waterBrush = Brush.verticalGradient(
-        0.0f to colors.accentOrangeEnd.copy(alpha = 0.9f),
-        0.35f to colors.accentOrangeStart,
-        0.75f to colors.progressAccent,
-        1.0f to Color(0xFF5A2A05)
+        0.0f to Color(0xFFFFF6E0),
+        0.18f to Color(0xFFFFD37A),
+        0.40f to Color(0xFFFF9E2B),
+        0.70f to Color(0xFFC85E00),
+        1.0f to Color(0xFF4A1F00)
     )
 
     LaunchedEffect(Unit,waterLevel) {

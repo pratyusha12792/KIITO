@@ -57,6 +57,35 @@ actual fun PromotionWebView(
                 ) {
                     onLoadingStateChange(false)
                 }
+
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: android.webkit.WebResourceRequest?
+                ): Boolean {
+
+                    val clickedUrl = request?.url.toString()
+
+                    return if (
+                        clickedUrl.startsWith("geo:") ||
+                        clickedUrl.contains("google.com/maps") ||
+                        clickedUrl.startsWith("intent:")
+                    ) {
+
+                        try {
+                            val intent = android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse(clickedUrl)
+                            )
+                            view?.context?.startActivity(intent)
+                        } catch (e: Exception) {
+                            view?.loadUrl(clickedUrl)
+                        }
+
+                        true // We handled it
+                    } else {
+                        false // Let WebView load normally
+                    }
+                }
             }
         }
     }

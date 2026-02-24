@@ -20,10 +20,12 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +37,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +47,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +71,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -76,6 +81,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -85,6 +91,7 @@ import coil3.compose.AsyncImage
 import com.kito.core.common.util.currentLocalDateTime
 import com.kito.core.network.supabase.model.MidsemScheduleModel
 import com.kito.core.network.supabase.model.AdModel
+import com.kito.core.platform.AppConfig
 import com.kito.core.platform.openUrl
 import com.kito.core.platform.sendEmail
 import com.kito.core.platform.toast
@@ -100,6 +107,7 @@ import com.kito.core.presentation.navigation3.Routes
 import com.kito.core.presentation.navigation3.TabRoutes
 import com.kito.core.presentation.navigation3.isTopAsState
 import com.kito.core.presentation.navigation3.navigateTab
+import com.kito.feature.schedule.presentation.horizontalCarouselTransition
 import com.kito.feature.settings.presentation.components.LoginDialogBox
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
@@ -118,6 +126,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
+import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalHazeApi::class,
     ExperimentalHazeMaterialsApi::class
@@ -230,7 +239,7 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp)
+//                        .padding(horizontal = 12.dp)
                 ) {
                     LazyColumn() {
                         item {
@@ -266,6 +275,7 @@ fun HomeScreen(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
+                                    .padding(horizontal = 12.dp)
                             ) {
                                 Text(
                                     text = "Today's Schedule",
@@ -342,22 +352,79 @@ fun HomeScreen(
 
                         // Schedule Section
                         item {
-                            ScheduleCard(
-                                colors = uiColors,
-                                schedule = schedule,
-                                onCLick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                                    rootNavBackStack.add(Routes.Schedule)
-                                }
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp)
+                            ) {
+                                ScheduleCard(
+                                    colors = uiColors,
+                                    schedule = schedule,
+                                    onCLick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                        rootNavBackStack.add(Routes.Schedule)
+                                    }
+                                )
+                            }
                         }
                         item {
                             Spacer(Modifier.height(8.dp))
                         }
 
-                        item { Spacer(Modifier.height(8.dp)) }
-                        item { AdBanner(ads = ads) }
-                        item { Spacer(Modifier.height(8.dp)) }
+                        if (true) {
+                            item {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                ) {
+                                    Text(
+                                        text = "Special Offers & Promotions",
+                                        color = uiColors.textPrimary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                    )
+//                                    IconButton(
+//                                        onClick = {
+//                                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+//                                            rootNavBackStack.add(
+//                                                Routes.Promotions(
+//                                                    url = ads
+//                                                )
+//                                            )
+//                                        },
+//                                        modifier = Modifier.size(28.dp)
+//                                    ) {
+//                                        Icon(
+//                                            imageVector = Icons.AutoMirrored.Default.ArrowForwardIos,
+//                                            contentDescription = "Notifications",
+//                                            tint = uiColors.textPrimary,
+//                                            modifier = Modifier.size(18.dp)
+//                                        )
+//                                    }
+                                }
+                            }
+
+                            item {
+                                Spacer(Modifier.height(8.dp))
+                            }
+
+                            item {
+                                AdBanner(
+                                    ads = ads,
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                        rootNavBackStack.add(
+                                            Routes.Promotions(
+                                                url = it
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+                        }
 
                         if (currentDate <= recruitmentEndDate) {
 //                        if (false){
@@ -365,6 +432,7 @@ fun HomeScreen(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier
+                                        .padding(horizontal = 12.dp)
                                 ) {
                                     Text(
                                         text = "Recruitment",
@@ -398,19 +466,24 @@ fun HomeScreen(
                             }
 
                             item {
-                                JoinELabsBanner(
-                                    colors = uiColors,
-                                    onClick = {
-                                        viewmodel.postRecruitmentClick()
-                                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                ) {
+                                    JoinELabsBanner(
+                                        colors = uiColors,
+                                        onClick = {
+                                            viewmodel.postRecruitmentClick()
+                                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
 //                                        openUrl("https://recruit-teal-ten.vercel.app/")
-                                        rootNavBackStack.add(
-                                            Routes.Promotions(
-                                                url = "https://leap-scholar-dun.vercel.app/"
+                                            rootNavBackStack.add(
+                                                Routes.Promotions(
+                                                    url = "https://leap-scholar-dun.vercel.app/"
+                                                )
                                             )
-                                        )
-                                    }
-                                )
+                                        }
+                                    )
+                                }
                             }
 
                             item {
@@ -422,6 +495,8 @@ fun HomeScreen(
                             item {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
                                 ) {
                                     Text(
                                         text = "Upcoming Exam Schedule",
@@ -452,13 +527,18 @@ fun HomeScreen(
                             }
 
                             item {
-                                UpcomingExamCard(
-                                    item = examModel,
-                                    onClick = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                                        rootNavBackStack.add(Routes.ExamSchedule)
-                                    }
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                ) {
+                                    UpcomingExamCard(
+                                        item = examModel,
+                                        onClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                            rootNavBackStack.add(Routes.ExamSchedule)
+                                        }
+                                    )
+                                }
                             }
                         }
 
@@ -469,6 +549,8 @@ fun HomeScreen(
                             item {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
                                 ) {
                                     Text(
                                         text = "Upcoming Events",
@@ -494,7 +576,12 @@ fun HomeScreen(
                                 }
                             }
                             item {
-                                UpcomingEventCard()
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 12.dp)
+                                ) {
+                                    UpcomingEventCard()
+                                }
                             }
                         }
 
@@ -504,6 +591,8 @@ fun HomeScreen(
                         item {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp)
                             ) {
                                 Text(
                                     text = "Attendance",
@@ -537,6 +626,7 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(200.dp)
+                                    .padding(horizontal = 12.dp)
                             ) {
                                 AttendanceBarCard(
                                     attendance = attendance,
@@ -886,7 +976,8 @@ fun JoinELabsBanner(
 @Composable
 fun AdBanner(
     ads: List<AdModel>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (url : String) -> Unit
 ) {
     if (ads.isEmpty()) return
 
@@ -905,21 +996,37 @@ fun AdBanner(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         HorizontalPager(
+            contentPadding = PaddingValues(
+                horizontal = if (
+                    ads.size > 1
+                ){
+                    24.dp
+                }else{
+                    12.dp
+                }
+            ),
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(120.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .aspectRatio(4f)
         ) { page ->
             val ad = ads[page]
-            Box(
+            Card(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { ad.click_url?.let { openUrl(it) } }
+                    .horizontalCarouselTransition(
+                        page = page,
+                        pagerState = pagerState,
+                        scale = 0.90f
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                onClick = {
+                    ad.click_url?.let {
+                        onClick(
+                            it
+                        )
+                    }
+                }
             ) {
                 AsyncImage(
                     model = ad.media_url,
@@ -933,7 +1040,9 @@ fun AdBanner(
         // Dot indicators
         if (ads.size > 1) {
             Spacer(modifier = Modifier.height(6.dp))
-            Row {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 repeat(ads.size) { index ->
                     Box(
                         modifier = Modifier
@@ -951,29 +1060,4 @@ fun AdBanner(
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun AdBannerPreview() {
-    val fakeAds = listOf(
-        AdModel(
-            id = 1,
-            media_url = null,
-            media_type = "image",
-            click_url = "https://example.com",
-            display_order = 1,
-            is_active = true
-        ),
-        AdModel(
-            id = 2,
-            media_url = null,
-            media_type = "image",
-            click_url = "https://example2.com",
-            display_order = 2,
-            is_active = true
-        )
-    )
-
-    AdBanner(ads = fakeAds)
 }

@@ -147,6 +147,9 @@ kotlin {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqlite.bundled)
 
+            // Image IOS
+            implementation("io.coil-kt.coil3:coil-network-ktor:3.3.0")
+
         }
 
         val iosSimulatorArm64Test by getting {
