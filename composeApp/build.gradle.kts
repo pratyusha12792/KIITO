@@ -140,16 +140,13 @@ kotlin {
 
             // Image loading (KMP)
             implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+            implementation("io.coil-kt.coil3:coil-network-ktor3:3.3.0")
         }
 
         iosMain.dependencies {
             // Ktor engine for iOS
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqlite.bundled)
-
-            // Image IOS
-            implementation("io.coil-kt.coil3:coil-network-ktor:3.3.0")
-
         }
 
         val iosSimulatorArm64Test by getting {

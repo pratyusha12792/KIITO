@@ -1,8 +1,10 @@
 package com.kito.core.presentation.components
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.delay
+import androidx.core.net.toUri
 
 @Composable
 actual fun PromotionWebView(
@@ -60,30 +63,24 @@ actual fun PromotionWebView(
 
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
-                    request: android.webkit.WebResourceRequest?
+                    request: WebResourceRequest?
                 ): Boolean {
 
-                    val clickedUrl = request?.url.toString()
+                    val clickedUri = request?.url ?: return false
+                    val clickedHost = clickedUri.host ?: return false
 
-                    return if (
-                        clickedUrl.startsWith("geo:") ||
-                        clickedUrl.contains("google.com/maps") ||
-                        clickedUrl.startsWith("intent:")
-                    ) {
+                    val baseHost = url.toUri().host
 
+                    return if (clickedHost != baseHost) {
                         try {
-                            val intent = android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse(clickedUrl)
-                            )
+                            val intent = Intent(Intent.ACTION_VIEW, clickedUri)
                             view?.context?.startActivity(intent)
                         } catch (e: Exception) {
-                            view?.loadUrl(clickedUrl)
+                            e.printStackTrace()
                         }
-
-                        true // We handled it
+                        true // open externally
                     } else {
-                        false // Let WebView load normally
+                        false // load inside WebView
                     }
                 }
             }

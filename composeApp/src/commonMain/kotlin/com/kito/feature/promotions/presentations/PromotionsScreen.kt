@@ -35,14 +35,12 @@ fun PromotionsScreen(url: String) {
             .fillMaxSize()
             .background(Color(0xFF121116))
     ) {
-
         PromotionWebView(
             url = url,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
                     top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-//                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 ),
             onLoadingStateChange = { loading ->
                 isLoading = loading
