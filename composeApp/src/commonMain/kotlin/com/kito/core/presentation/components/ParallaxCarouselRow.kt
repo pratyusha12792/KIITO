@@ -31,7 +31,8 @@ fun ParallaxCarouselRow(
     itemSpacing: Dp = 8.dp,
     contentPadding: PaddingValues = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
     parallaxFraction: Float = 0.4f, // how much the content lags (0f = no parallax, 1f = stays fully stationary)
-    content: @Composable BoxScope.(index: Int) -> Unit
+    itemBoxColor: (index: Int) -> Color = { Color(0xFF5F2B04) },
+    content: @Composable BoxScope.(index: Int) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -79,7 +80,7 @@ fun ParallaxCarouselRow(
                     .width(itemWidth)
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(28.dp))
-                    .background(Color(0xFF5F2B04))
+                    .background(itemBoxColor(index))
             ) {
                 // Content box — same full size, but shifted with parallax
                 Box(
