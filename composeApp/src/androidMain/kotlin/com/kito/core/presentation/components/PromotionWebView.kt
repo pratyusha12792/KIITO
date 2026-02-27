@@ -1,8 +1,10 @@
 package com.kito.core.presentation.components
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
@@ -27,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlinx.coroutines.delay
+import androidx.core.net.toUri
 
 @Composable
 actual fun PromotionWebView(
@@ -56,6 +59,29 @@ actual fun PromotionWebView(
                     url: String?
                 ) {
                     onLoadingStateChange(false)
+                }
+
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): Boolean {
+
+                    val clickedUri = request?.url ?: return false
+                    val clickedHost = clickedUri.host ?: return false
+
+                    val baseHost = url.toUri().host
+
+                    return if (clickedHost != baseHost) {
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, clickedUri)
+                            view?.context?.startActivity(intent)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        true // open externally
+                    } else {
+                        false // load inside WebView
+                    }
                 }
             }
         }

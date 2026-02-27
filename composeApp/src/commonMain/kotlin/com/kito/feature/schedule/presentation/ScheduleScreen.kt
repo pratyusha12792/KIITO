@@ -577,22 +577,35 @@ fun ScheduleScreen(
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
-fun Modifier.horizontalCarouselTransition(page: Int, pagerState: PagerState) =
-    graphicsLayer {
+fun Modifier.horizontalCarouselTransition(
+    page: Int,
+    pagerState: PagerState,
+    scale: Float = 0.91f
+): Modifier {
+    return graphicsLayer {
         val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
-        val scale = lerp(
-            start = 0.92f,
-            stop = 1f,
-            fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
-        )
+        val scale = if (pagerState.pageCount > 1) {
+            lerp(
+                start = scale,
+                stop = 1f,
+                fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+            )
+        } else {
+            lerp(
+                start = 1f,
+                stop = 1f,
+                fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
+            )
+        }
         scaleX = scale
         scaleY = scale
         alpha = lerp(
-            start = 0.5f,
+            start = 0.4f,
             stop = 1f,
             fraction = 1f - pageOffset.absoluteValue.coerceIn(0f, 1f)
         )
     }
+}
 
 private fun todayKey(): String {
     val dt = currentLocalDateTime()
