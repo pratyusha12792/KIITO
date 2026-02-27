@@ -87,7 +87,7 @@ fun RootNavGraph(
             entry<Routes.Schedule>{
                 ScheduleScreen(
                     onBack = {
-                        rootNavBackStack.removeLast()
+                        rootNavBackStack.removeAt(rootNavBackStack.lastIndex)
                     }
                 )
             }
@@ -98,7 +98,7 @@ fun RootNavGraph(
                 FacultyDetailScreen(
                     facultyId = it.facultyId,
                     onBack = {
-                        rootNavBackStack.removeLast()
+                        rootNavBackStack.removeAt(rootNavBackStack.lastIndex)
                     }
                 )
             }
