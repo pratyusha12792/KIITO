@@ -367,7 +367,7 @@ fun HomeScreen(
                             Spacer(Modifier.height(8.dp))
                         }
 
-                        if (false){
+                        if (true){
 
                             item {
                                 Row(
@@ -383,19 +383,21 @@ fun HomeScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                         modifier = Modifier.weight(1f)
                                     )
-                                    IconButton(
-                                        onClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
-                                            tabNavBackStack.navigateTab(TabRoutes.Attendance)
-                                        },
-                                        modifier = Modifier.size(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Default.ArrowForwardIos,
-                                            contentDescription = "Back",
-                                            tint = uiColors.textPrimary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                    if (false) {
+                                        IconButton(
+                                            onClick = {
+                                                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                                tabNavBackStack.navigateTab(TabRoutes.Attendance)
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Default.ArrowForwardIos,
+                                                contentDescription = "Back",
+                                                tint = uiColors.textPrimary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
