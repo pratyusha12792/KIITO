@@ -162,17 +162,17 @@ fun HolidayListScreen() {
 private fun getMonthImage(month: String): DrawableResource {
     return when {
         month.contains("January") -> Res.drawable.january1_bg
-        month.contains("February") -> Res.drawable.february_bg
+        month.contains("February") -> Res.drawable.feb_bg
         month.contains("March") -> Res.drawable.march_bg
-        month.contains("April") -> Res.drawable.january1_bg
+        month.contains("April") -> Res.drawable.april_bg
         month.contains("May") -> Res.drawable.may_bg
         month.contains("June") -> Res.drawable.june_bg
         month.contains("July") -> Res.drawable.july_bg
-        month.contains("August") -> Res.drawable.august_bg
-        month.contains("September") -> Res.drawable.september_bg
-        month.contains("October") -> Res.drawable.october_bg
-        month.contains("November") -> Res.drawable.november_bg
-        month.contains("December") -> Res.drawable.december_bg
+        month.contains("August") -> Res.drawable.aug_bg
+        month.contains("September") -> Res.drawable.sept_bg
+        month.contains("October") -> Res.drawable.oct_bg
+        month.contains("November") -> Res.drawable.nov_bg
+        month.contains("December") -> Res.drawable.dec_bg
         else -> Res.drawable.january1_bg
     }
 }
