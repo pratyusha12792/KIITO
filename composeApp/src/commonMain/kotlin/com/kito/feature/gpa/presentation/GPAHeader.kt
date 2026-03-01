@@ -226,7 +226,7 @@ fun GPAHeader(
                             ) {
                                 listOf(
                                     "CSE", "CSSE", "CSCE",
-                                    "IT", "ECS", "ECE", "VLSI"
+                                    "IT", "ECS", "ECE"
                                 ).forEach { branch ->
                                     DropdownMenuItem(
                                         text = { Text(branch) },
