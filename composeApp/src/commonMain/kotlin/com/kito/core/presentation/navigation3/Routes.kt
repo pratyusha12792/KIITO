@@ -4,39 +4,42 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface Routes: NavKey {
+sealed interface Routes : NavKey {
 
     @Serializable
-    object Tabs: Routes, NavKey
+    object Tabs : Routes, NavKey
 
     @Serializable
-    object Schedule: Routes, NavKey
+    object Schedule : Routes, NavKey
 
     @Serializable
     data class FacultyDetail(val facultyId: Long) : Routes, NavKey
+
     @Serializable
     object ExamSchedule : Routes, NavKey
 
     @Serializable
-    object Onboarding: Routes, NavKey
+    object Onboarding : Routes, NavKey
 
     @Serializable
-    object UserSetup: Routes, NavKey
-
+    object UserSetup : Routes, NavKey
 }
 
 @Serializable
-sealed interface TabRoutes: NavKey {
+sealed interface TabRoutes : NavKey {
 
     @Serializable
-    object Home : TabRoutes,NavKey
+    object Home : TabRoutes, NavKey
 
     @Serializable
-    object Attendance : TabRoutes,NavKey
+    object Attendance : TabRoutes, NavKey
 
     @Serializable
-    object Faculty : TabRoutes,NavKey
+    object Faculty : TabRoutes, NavKey
 
     @Serializable
-    object Profile : TabRoutes,NavKey
+    object Profile : TabRoutes, NavKey
+
+    @Serializable
+    object Calendar : TabRoutes, NavKey  // ← fixed: implements TabRoutes
 }
