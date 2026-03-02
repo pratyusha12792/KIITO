@@ -7,10 +7,8 @@ import com.kito.core.datastore.PrefsRepository
 import com.kito.core.network.supabase.SupabaseRepository
 import com.kito.feature.schedule.presentation.WeekDay
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn

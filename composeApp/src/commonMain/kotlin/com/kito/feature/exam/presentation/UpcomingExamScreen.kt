@@ -50,7 +50,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kito.core.common.util.formatDate
 import com.kito.core.common.util.formatTo12Hour
-import com.kito.core.network.supabase.model.MidsemScheduleModel
 import com.kito.core.presentation.components.UIColors
 import com.kito.core.presentation.components.animation.NoDataFoundAnimation
 import com.kito.core.presentation.components.meshGradient
