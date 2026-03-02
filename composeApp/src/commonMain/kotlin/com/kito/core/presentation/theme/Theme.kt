@@ -7,6 +7,8 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
 
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFF6750A4),
@@ -26,6 +28,7 @@ fun KitoTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
+
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     MaterialExpressiveTheme(

@@ -5,6 +5,8 @@ import com.kito.core.database.entity.SectionEntity
 import com.kito.core.database.entity.StudentEntity
 import com.kito.core.network.supabase.model.EventAndAdModel
 import com.kito.core.network.supabase.model.LatestAppVersionModel
+import com.kito.core.network.supabase.model.AdModel
+import com.kito.core.network.supabase.model.CalendarEventModel
 import com.kito.core.network.supabase.model.MidsemScheduleModel
 import com.kito.core.network.supabase.model.PlatformClass
 import com.kito.core.network.supabase.model.TeacherFuzzySearchModel
@@ -90,8 +92,8 @@ class SupabaseRepository(
         }.body()
     }
 
-    suspend fun getEventsAndAds(): List<EventAndAdModel> {
-        return client.get("rest/v1/events_and_ads") {
+    suspend fun getAds(): List<AdModel> {
+        return client.get("rest/v1/ads") {
             parameter("is_active", "eq.true")
             parameter("order", "display_order.asc")
         }.body()
@@ -113,4 +115,24 @@ class SupabaseRepository(
             )
         }
     }
+
+    suspend fun getCalendarEventsByMonth(year: Int, month: Int): List<CalendarEventModel> {
+        val monthStr = "${year}-${month.toString().padStart(2, '0')}"
+        return client.get("rest/v1/calendar_events") {
+            parameter("date", "gte.${monthStr}-01")
+            parameter("date", "lte.${monthStr}-31")
+            parameter("is_active", "eq.true")
+            parameter("order", "date.asc,start_time.asc")
+            parameter("select", "*")
+        }.body()
+    }
+
+    suspend fun getAllCalendarEvents(): List<CalendarEventModel> {
+        return client.get("rest/v1/calendar_events") {
+            parameter("is_active", "eq.true")
+            parameter("order", "date.asc,start_time.asc")
+            parameter("select", "*")
+        }.body()
+    }
+
 }
