@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -53,14 +55,30 @@ fun KhaooGullyHomeScreen(
 ) {
     com.kito.SetSystemBarAppearance(isLightForeground = false)
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showCampusMenu by remember { mutableStateOf(false) }
 
-    FoodHomeContent(
-        state             = state,
-        onSearchChange    = viewModel::onSearchQueryChange,
-        onCategoryClick   = viewModel::onCategorySelected,
-        onRestaurantClick = onRestaurantClick,
-        onRetry           = viewModel::loadHomeData
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        FoodHomeContent(
+            state             = state,
+            onSearchChange    = viewModel::onSearchQueryChange,
+            onCategoryClick   = viewModel::onCategorySelected,
+            onRestaurantClick = onRestaurantClick,
+            onRetry           = viewModel::loadHomeData,
+            onLocationClick   = { showCampusMenu = true }
+        )
+
+        if (showCampusMenu) {
+            CampusSelectionDialog(
+                campuses       = state.availableCampuses,
+                selectedCampus = state.selectedCampus,
+                onCampusClick  = {
+                    viewModel.onCampusSelected(it)
+                    showCampusMenu = false
+                },
+                onDismiss      = { showCampusMenu = false }
+            )
+        }
+    }
 }
 
 @Composable
@@ -69,7 +87,8 @@ private fun FoodHomeContent(
     onSearchChange: (String) -> Unit,
     onCategoryClick: (KgCategory) -> Unit,
     onRestaurantClick: (KgRestaurant) -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onLocationClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -99,7 +118,8 @@ private fun FoodHomeContent(
                 state             = state,
                 onSearchChange    = onSearchChange,
                 onCategoryClick   = onCategoryClick,
-                onRestaurantClick = onRestaurantClick
+                onRestaurantClick = onRestaurantClick,
+                onLocationClick   = onLocationClick
             )
         }
     }
@@ -110,7 +130,8 @@ private fun HomeScrollContent(
     state: FoodHomeUiState,
     onSearchChange: (String) -> Unit,
     onCategoryClick: (KgCategory) -> Unit,
-    onRestaurantClick: (KgRestaurant) -> Unit
+    onRestaurantClick: (KgRestaurant) -> Unit,
+    onLocationClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -119,7 +140,7 @@ private fun HomeScrollContent(
     ) {
         Spacer(Modifier.height(44.dp))
 
-        LocationHeader()
+        LocationHeader(selectedCampus = state.selectedCampus, onClick = onLocationClick)
         Spacer(Modifier.height(12.dp))
 
         KgSearchBar(query = state.searchQuery, onQueryChange = onSearchChange)
@@ -146,19 +167,20 @@ private fun HomeScrollContent(
 }
 
 @Composable
-private fun LocationHeader() {
+private fun LocationHeader(selectedCampus: String?, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.LocationOn, null, tint = PrimaryGreen, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(6.dp))
         Column {
-            Text("Get Started", fontSize = 11.sp, color = TextSecondary)
+            Text("Location", fontSize = 11.sp, color = TextSecondary)
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Select Campus", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                Text(selectedCampus ?: "All Campuses", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Default.ArrowForward, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
             }
@@ -385,11 +407,109 @@ private fun FullScreenError(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         Button(
             onClick = onRetry,
-            colors  = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
         ) {
             Icon(Icons.Default.Refresh, null)
             Spacer(Modifier.width(6.dp))
             Text("Retry")
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Campus Selection Dialog
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CampusSelectionDialog(
+    campuses: List<String>,
+    selectedCampus: String?,
+    onCampusClick: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onDismiss),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Surface(
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                color = CardBg,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = false, onClick = {}) 
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Select Campus", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = TextPrimary)
+                            Text("Choose your location", fontSize = 13.sp, color = TextSecondary)
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(androidx.compose.material.icons.Icons.Default.Close, null, tint = TextPrimary)
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    // "All Campuses" option
+                    CampusOptionRow(
+                        name = "All Campuses",
+                        isSelected = selectedCampus == null,
+                        onClick = { onCampusClick(null) }
+                    )
+                    HorizontalDivider(color = Color(0xFFF0F0F0))
+
+                    // List of campuses
+                    campuses.forEach { campus ->
+                        CampusOptionRow(
+                            name = campus,
+                            isSelected = campus == selectedCampus,
+                            onClick = { onCampusClick(campus) }
+                        )
+                        HorizontalDivider(color = Color(0xFFF0F0F0))
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                        Text("Close", color = TextSecondary, fontSize = 15.sp)
+                    }
+                    Spacer(Modifier.height(WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CampusOptionRow(name: String, isSelected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(if (isSelected) PrimaryGreen else TextSecondary.copy(alpha = 0.4f), CircleShape)
+        )
+        Spacer(Modifier.width(14.dp))
+        Text(
+            text       = name,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+            fontSize   = 14.sp,
+            color      = if (isSelected) PrimaryGreen else TextPrimary,
+            modifier   = Modifier.weight(1f)
+        )
     }
 }

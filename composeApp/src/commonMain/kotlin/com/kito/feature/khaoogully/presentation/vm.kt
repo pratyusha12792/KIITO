@@ -21,8 +21,12 @@ data class FoodHomeUiState(
     val restaurants: List<KgRestaurant> = emptyList(),
     val filteredRestaurants: List<KgRestaurant> = emptyList(),
     val searchQuery: String = "",
-    val selectedCategory: String? = null
-)
+    val selectedCategory: String? = null,
+    val selectedCampus: String? = null
+) {
+    val availableCampuses: List<String>
+        get() = restaurants.mapNotNull { it.campusName }.distinct().sorted()
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Menu UI State  (restaurant detail screen)
@@ -95,7 +99,8 @@ class KhaoogullyViewModel(
                     error               = error,
                     restaurants         = restaurants,
                     filteredRestaurants = restaurants,
-                    categories          = categoriesResult
+                    categories          = categoriesResult,
+                    selectedCampus      = null // Reset on full reload
                 )
             }
         }
@@ -105,7 +110,7 @@ class KhaoogullyViewModel(
         _uiState.update { state ->
             state.copy(
                 searchQuery         = query,
-                filteredRestaurants = applyHomeFilters(state.restaurants, query, state.selectedCategory)
+                filteredRestaurants = applyHomeFilters(state.restaurants, query, state.selectedCategory, state.selectedCampus)
             )
         }
     }
@@ -115,7 +120,16 @@ class KhaoogullyViewModel(
             val newSelected = if (state.selectedCategory == category.name) null else category.name
             state.copy(
                 selectedCategory    = newSelected,
-                filteredRestaurants = applyHomeFilters(state.restaurants, state.searchQuery, newSelected)
+                filteredRestaurants = applyHomeFilters(state.restaurants, state.searchQuery, newSelected, state.selectedCampus)
+            )
+        }
+    }
+
+    fun onCampusSelected(campus: String?) {
+        _uiState.update { state ->
+            state.copy(
+                selectedCampus      = campus,
+                filteredRestaurants = applyHomeFilters(state.restaurants, state.searchQuery, state.selectedCategory, campus)
             )
         }
     }
@@ -123,7 +137,8 @@ class KhaoogullyViewModel(
     private fun applyHomeFilters(
         restaurants: List<KgRestaurant>,
         query: String,
-        selectedCategory: String?
+        selectedCategory: String?,
+        selectedCampus: String?
     ): List<KgRestaurant> {
         var result = restaurants
         if (query.isNotBlank()) {
@@ -137,6 +152,9 @@ class KhaoogullyViewModel(
             result = result.filter { r ->
                 r.cuisine.any { it.equals(selectedCategory, ignoreCase = true) }
             }
+        }
+        if (selectedCampus != null) {
+            result = result.filter { it.campusName == selectedCampus }
         }
         return result
     }

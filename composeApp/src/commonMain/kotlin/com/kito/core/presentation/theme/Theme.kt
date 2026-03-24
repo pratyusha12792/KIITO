@@ -28,6 +28,7 @@ fun KitoTheme(
     darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    com.kito.SetSystemBarAppearance(isLightForeground = true)
 
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
