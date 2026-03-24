@@ -132,6 +132,7 @@ fun MainUI(
                     subclass(Routes.HolidayList::class, Routes.HolidayList.serializer())
                     subclass(Routes.GPACalc::class, Routes.GPACalc.serializer())
                     subclass(Routes.Calendar::class, Routes.Calendar.serializer())
+                    subclass(Routes.RestaurantMenu::class, Routes.RestaurantMenu.serializer())
                 }
             }
         },
