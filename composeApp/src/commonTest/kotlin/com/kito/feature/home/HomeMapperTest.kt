@@ -5,47 +5,39 @@ import com.kito.feature.home.data.mapper.toDomain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HomeMapperTest {
 
     @Test
-    fun eventAndAdModel_maps_to_domain() {
-        val dto = EventAndAdModel(
-            id = 42L,
-            media_url = "https://example.com/image.png",
-            media_type = "image",
-            click_url = "https://example.com/click",
-            display_order = 1,
-            is_active = true,
-            isAd = true
-        )
+    fun toDomain_mapsAllFields() {
+        val dto = EventAndAdModel(id = 42L, media_url = "https://cdn/img.jpg", media_type = "image", click_url = "https://example.com", isAd = true)
         val domain = dto.toDomain()
-
         assertEquals(42L, domain.id)
-        assertEquals("https://example.com/image.png", domain.mediaUrl)
+        assertEquals("https://cdn/img.jpg", domain.mediaUrl)
         assertEquals("image", domain.mediaType)
-        assertEquals("https://example.com/click", domain.clickUrl)
+        assertEquals("https://example.com", domain.clickUrl)
         assertTrue(domain.isAd)
     }
 
     @Test
-    fun eventAndAdModel_maps_nulls_to_defaults() {
-        val dto = EventAndAdModel(
-            id = null,
-            media_url = null,
-            media_type = null,
-            click_url = null,
-            display_order = null,
-            is_active = null,
-            isAd = null
-        )
-        val domain = dto.toDomain()
+    fun toDomain_nullId_defaultsToZero() {
+        assertEquals(0L, EventAndAdModel().toDomain().id)
+    }
 
-        assertEquals(0L, domain.id)
-        assertEquals("", domain.mediaUrl)
-        assertEquals("", domain.mediaType)
-        assertEquals(null, domain.clickUrl)
-        assertFalse(domain.isAd)
+    @Test
+    fun toDomain_nullClickUrl_mapsToNull() {
+        assertNull(EventAndAdModel(id = 1L, media_url = "url", media_type = "image", click_url = null, isAd = false).toDomain().clickUrl)
+    }
+
+    @Test
+    fun toDomain_nullMediaUrl_defaultsToEmpty() {
+        assertEquals("", EventAndAdModel().toDomain().mediaUrl)
+    }
+
+    @Test
+    fun toDomain_nullIsAd_defaultsFalse() {
+        assertFalse(EventAndAdModel().toDomain().isAd)
     }
 }

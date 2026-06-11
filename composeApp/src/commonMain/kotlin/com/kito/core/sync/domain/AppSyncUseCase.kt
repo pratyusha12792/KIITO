@@ -28,8 +28,8 @@ class AppSyncUseCase(
     private val studentSectionRepository: StudentSectionRepository,
     private val attendanceRepository: AttendanceRepository,
     private val sapRepository: SapRepository,
-) {
-    suspend fun scheduleSync(roll: String): Result<Unit> = supervisorScope {
+) : SyncUseCase {
+    override suspend fun scheduleSync(roll: String): Result<Unit> = supervisorScope {
         runCatching {
             val student = runCatching {
                 supabaseRepository.getStudentByRoll(roll)
@@ -72,7 +72,7 @@ class AppSyncUseCase(
         }
     }
 
-    suspend fun syncAll(
+    override suspend fun syncAll(
         roll: String,
         sapPassword: String,
         year: String,

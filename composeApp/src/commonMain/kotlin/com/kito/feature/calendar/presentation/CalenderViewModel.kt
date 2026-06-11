@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kito.feature.calendar.domain.model.CalendarEvent
 import com.kito.feature.calendar.domain.repository.CalendarRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +18,8 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 
 class CalendarViewModel(
-    private val calendarRepository: CalendarRepository
+    private val calendarRepository: CalendarRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -53,8 +56,7 @@ class CalendarViewModel(
     }
 
     fun fetchEvents() {
-        viewModelScope.launch {
-            _isLoading.value = true
+        viewModelScope.launch(dispatcher) {
             runCatching {
                 calendarRepository.getEventsByMonth(
                     year = _displayYear.value,

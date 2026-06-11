@@ -6,10 +6,12 @@ import com.kito.core.datastore.PrefsRepository
 import com.kito.core.platform.ConnectivityObserver
 import com.kito.core.platform.SecureStorage
 import com.kito.core.presentation.components.state.SyncUiState
-import com.kito.core.sync.domain.AppSyncUseCase
+import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.model.AttendanceSummary
 import com.kito.feature.attendance.domain.usecase.GetAttendanceSummaryUseCase
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -26,8 +28,9 @@ class AttendanceListScreenViewModel(
     private val getAttendanceSummary: GetAttendanceSummaryUseCase,
     private val prefs: PrefsRepository,
     @Provided private val secureStorage: SecureStorage,
-    private val appSyncUseCase: AppSyncUseCase,
-    @Provided private val connectivityObserver: ConnectivityObserver
+    private val appSyncUseCase: SyncUseCase,
+    @Provided private val connectivityObserver: ConnectivityObserver,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ViewModel(){
 
     val isOnline = connectivityObserver.isOnline
@@ -38,7 +41,7 @@ class AttendanceListScreenViewModel(
     val syncEvents: SharedFlow<SyncUiState> = _syncEvents
 
     fun refresh(){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
 
             val roll = prefs.userRollFlow.first()
@@ -114,7 +117,7 @@ class AttendanceListScreenViewModel(
     fun login(
         password: String
     ){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _loginState.value = SyncUiState.Loading
             val roll = prefs.userRollFlow.first()
             val year = prefs.academicYearFlow.first()

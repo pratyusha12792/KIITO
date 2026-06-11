@@ -7,6 +7,8 @@ import com.kito.core.presentation.components.state.SearchResultState
 import com.kito.core.presentation.components.state.SyncUiState
 import com.kito.feature.faculty.domain.model.Faculty
 import com.kito.feature.faculty.domain.repository.FacultyRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -14,7 +16,8 @@ import org.koin.core.annotation.Provided
 
 class FacultyScreenViewModel(
     private val repository: FacultyRepository,
-    @Provided private val connectivityObserver: ConnectivityObserver
+    @Provided private val connectivityObserver: ConnectivityObserver,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     val isOnline = connectivityObserver.isOnline
@@ -34,7 +37,7 @@ class FacultyScreenViewModel(
     val syncState = _syncState.asStateFlow()
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             isOnline.collect { online ->
                 if (!online) {
                     _syncState.value = SyncUiState.Idle
@@ -58,7 +61,7 @@ class FacultyScreenViewModel(
     }
 
     fun retry() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             if (isOnline.value) {
                 fetchFaculty()
             } else {
@@ -68,7 +71,7 @@ class FacultyScreenViewModel(
     }
 
     fun getSearchResult(query: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             if (query.isEmpty()) {
                 _facultySearchResult.value = emptyList()
                 _searchResultState.value = SearchResultState.Idle

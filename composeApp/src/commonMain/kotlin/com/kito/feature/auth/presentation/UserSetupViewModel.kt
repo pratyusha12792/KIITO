@@ -8,7 +8,7 @@ import com.kito.core.auth.AuthState
 import com.kito.core.common.util.currentLocalDateTime
 import com.kito.core.datastore.PrefsRepository
 import com.kito.core.platform.SecureStorage
-import com.kito.core.sync.domain.AppSyncUseCase
+import com.kito.core.sync.domain.SyncUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -18,8 +18,9 @@ import org.koin.core.annotation.Provided
 class UserSetupViewModel(
     private val prefs: PrefsRepository,
     @Provided private val secureStorage: SecureStorage,
-    private val appSyncUseCase: AppSyncUseCase,
+    private val appSyncUseCase: SyncUseCase,
     @Provided private val authRepository: AuthRepository,
+    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
 ) : ViewModel(){
     private val _setupState = MutableStateFlow<SetupState>(SetupState.Idle)
     val setupState = _setupState.asStateFlow()
@@ -31,7 +32,7 @@ class UserSetupViewModel(
     init {
         // Replace-and-gate: when Google sign-in succeeds (and passes the @kiit.ac.in / allowlist
         // gate inside AuthRepository), auto-fill identity and complete setup.
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             authRepository.authState.collect { state ->
                 if (state is AuthState.Authenticated && _setupState.value != SetupState.Success) {
                     _loadingSource.value = LoadingSource.None
@@ -46,7 +47,7 @@ class UserSetupViewModel(
             }
         }
         // Surface sign-in rejections/failures in the existing error UI.
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             authRepository.events.collect { event ->
                 _loadingSource.value = LoadingSource.None
                 _setupState.value = when (event) {
@@ -61,7 +62,7 @@ class UserSetupViewModel(
     /** Redirect (browser) fallback — used when native Credential Manager isn't available. */
     fun signInWithGoogle() {
         _setupState.value = SetupState.Loading
-        viewModelScope.launch { authRepository.signInWithGoogle() }
+        viewModelScope.launch(dispatcher) { authRepository.signInWithGoogle() }
     }
 
     /** Native account-picker flow launched; show loading until result/session arrives. */
@@ -125,7 +126,7 @@ class UserSetupViewModel(
         year: String = "2025",
         term: String = "020"
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _loadingSource.value = LoadingSource.Manual
             _setupState.value = SetupState.Loading
             try {

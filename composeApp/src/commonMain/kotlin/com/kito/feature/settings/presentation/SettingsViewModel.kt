@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kito.core.datastore.PrefsRepository
 import com.kito.core.platform.SecureStorage
 import com.kito.core.presentation.components.state.SyncUiState
-import com.kito.core.sync.domain.AppSyncUseCase
+import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
 import com.kito.feature.schedule.notification.NotificationController
 import kotlinx.coroutines.delay
@@ -24,9 +24,10 @@ class SettingsViewModel(
     private val prefs: PrefsRepository,
     @Provided private val secureStorage: SecureStorage,
     private val attendanceRepository: AttendanceRepository,
-    private val appSyncUseCase: AppSyncUseCase,
+    private val appSyncUseCase: SyncUseCase,
     private val notificationController: NotificationController,
     @Provided private val authRepository: com.kito.core.auth.AuthRepository,
+    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
 ): ViewModel(){
     private val _syncState = MutableStateFlow<SyncUiState>(SyncUiState.Idle)
     val syncState = _syncState.asStateFlow()
@@ -99,7 +100,7 @@ class SettingsViewModel(
         _syncState.value = SyncUiState.Idle
     }
     fun changeName(name: String){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
                 val formattedName = name
@@ -120,7 +121,7 @@ class SettingsViewModel(
         }
     }
     fun changeRoll(roll: String){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             val result = runCatching {
                 _syncState.value = SyncUiState.Loading
                 delay(1000.milliseconds)
@@ -143,7 +144,7 @@ class SettingsViewModel(
     }
 
     fun changeAttendance(attendance: Int){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
                 delay(1000.milliseconds)
@@ -155,7 +156,7 @@ class SettingsViewModel(
         }
     }
     fun changeYearTerm(year: String, term: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
                 delay(1000.milliseconds)
@@ -182,7 +183,7 @@ class SettingsViewModel(
         }
     }
     fun logOut(){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
             delay(1000.milliseconds)
             try {
@@ -195,7 +196,7 @@ class SettingsViewModel(
         }
     }
     fun logIn(password: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
             delay(1000.milliseconds)
             val roll = prefs.userRollFlow.first()
@@ -221,7 +222,7 @@ class SettingsViewModel(
         }
     }
     fun setNotificationState(state: Boolean){
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             prefs.setNotificationState(state)
             notificationController.sync()
         }

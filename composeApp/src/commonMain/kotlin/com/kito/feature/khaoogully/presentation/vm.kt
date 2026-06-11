@@ -45,6 +45,7 @@ data class MenuUiState(
 
 class KhaoogullyViewModel(
     private val repository: KhaoogullyRepository,
+    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FoodHomeUiState())
@@ -56,7 +57,7 @@ class KhaoogullyViewModel(
     init { loadHomeData() }
 
     fun loadHomeData() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _uiState.update { it.copy(isLoading = true, error = null) }
             val restaurantsDeferred = async { repository.getRestaurants() }
             val categoriesDeferred  = async { repository.getCategories() }
@@ -114,7 +115,7 @@ class KhaoogullyViewModel(
     }
 
     fun loadMenu(restaurant: KgRestaurant) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _menuState.update { MenuUiState(isLoading = true, restaurant = restaurant) }
             when (val result = repository.getMenu(restaurant.id)) {
                 is KgResult.Success -> {

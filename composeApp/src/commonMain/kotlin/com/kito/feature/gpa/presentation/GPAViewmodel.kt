@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.kito.core.datastore.PrefsRepository
 import com.kito.feature.gpa.domain.model.StudentProfile
 import com.kito.feature.gpa.domain.repository.GpaRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +20,7 @@ import kotlin.time.Clock
 class GPAViewmodel(
     prefs: PrefsRepository,
     private val gpaRepository: GpaRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     val roll = prefs.userRollFlow.stateIn(
@@ -36,7 +39,7 @@ class GPAViewmodel(
     val semester = _semester.asStateFlow()
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             roll.collect { rollNumber ->
                 if (rollNumber.isEmpty()) return@collect
                 val profile = gpaRepository.getStudentProfile(rollNumber)

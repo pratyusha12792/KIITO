@@ -7,6 +7,8 @@ import com.kito.core.datastore.PrefsRepository
 import com.kito.core.presentation.components.state.SyncUiState
 import com.kito.feature.exam.domain.model.ExamSchedule
 import com.kito.feature.exam.domain.repository.ExamRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -18,6 +20,7 @@ import kotlinx.datetime.LocalTime
 class UpcomingExamViewModel(
     private val prefs: PrefsRepository,
     private val examRepository: ExamRepository,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
     private val _exams = MutableStateFlow<List<ExamSchedule>>(emptyList())
@@ -31,8 +34,7 @@ class UpcomingExamViewModel(
     }
 
     fun getExamSchedule() {
-        viewModelScope.launch {
-            _uiState.value = SyncUiState.Loading
+        viewModelScope.launch(dispatcher) {
             try {
                 val roll = prefs.userRollFlow.first()
                 _exams.value = filterUpcomingOrOngoing(examRepository.getExamSchedule(roll))

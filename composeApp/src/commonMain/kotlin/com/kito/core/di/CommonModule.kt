@@ -11,6 +11,7 @@ import com.kito.core.datastore.PrefsRepository
 import com.kito.core.designsystem.StartupSyncGuard
 import com.kito.core.network.supabase.SupabaseRepository
 import com.kito.core.sync.domain.AppSyncUseCase
+import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.app.presentation.AppViewModel
 import com.kito.sap.SapPortalClient
 import com.kito.sap.SapRepository
@@ -18,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.create
 import org.koin.plugin.module.dsl.single
@@ -35,7 +37,7 @@ val commonModule = module {
     single<StudentSectionRepository>()
     single<PrefsRepository>()
     single<StartupSyncGuard>()
-    single<AppSyncUseCase>()
+    single<AppSyncUseCase>() bind SyncUseCase::class
 
     // Supabase Auth (SDK) — auth/GoTrue only; separate from the raw REST client.
     // create(::fn) registers SupabaseClient as a compiler-plugin-tracked provider so that

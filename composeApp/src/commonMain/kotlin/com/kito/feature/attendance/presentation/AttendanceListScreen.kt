@@ -38,6 +38,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -364,10 +366,10 @@ fun AttendanceListContent(
                 state = pullToRefreshState,
                 isRefreshing = state.syncState is SyncUiState.Loading,
                 onRefresh = {
-                    if (state.isOnline) onEvent(AttendanceListEvent.Refresh)
-                    else toast("No Internet Connection")
+                    onEvent(AttendanceListEvent.Refresh)
                 },
                 indicator = {},
+                modifier = Modifier.semantics { testTag = "attendance_content" },
             ) {
                 LazyColumn(
                     contentPadding = PaddingValues(

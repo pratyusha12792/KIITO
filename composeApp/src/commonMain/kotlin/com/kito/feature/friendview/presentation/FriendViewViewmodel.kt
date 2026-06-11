@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 class FriendViewViewmodel(
     private val friendViewRepository: FriendViewRepository,
     private val prefs: PrefsRepository,
+    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
 ) : ViewModel() {
 
     val friendRolls = prefs.friendRollsFlow
@@ -27,18 +28,18 @@ class FriendViewViewmodel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     fun selectFriend(roll: String) {
-        viewModelScope.launch { prefs.setSelectedFriendRoll(roll) }
+        viewModelScope.launch(dispatcher) { prefs.setSelectedFriendRoll(roll) }
     }
 
     fun addFriend(roll: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             prefs.addFriendRoll(roll)
             selectFriend(roll)
         }
     }
 
     fun removeFromList(roll: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             prefs.removeFriendRoll(roll)
             if (roll == selectedFriendRoll.value) {
                 selectFriend(friendRolls.value.firstOrNull() ?: "")

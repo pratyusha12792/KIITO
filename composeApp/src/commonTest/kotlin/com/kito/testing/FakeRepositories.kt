@@ -7,8 +7,21 @@ import com.kito.feature.exam.domain.repository.ExamRepository
 import com.kito.feature.faculty.domain.model.Faculty
 import com.kito.feature.faculty.domain.model.FacultyScheduleSlot
 import com.kito.feature.faculty.domain.repository.FacultyRepository
+import com.kito.feature.friendview.domain.model.FriendScheduleItem
+import com.kito.feature.friendview.domain.repository.FriendViewRepository
+import com.kito.feature.gpa.domain.model.StudentProfile
+import com.kito.feature.gpa.domain.repository.GpaRepository
+import com.kito.feature.home.domain.model.EventOrAd
+import com.kito.feature.home.domain.repository.HomeRepository
+import com.kito.feature.calendar.domain.model.CalendarEvent
+import com.kito.feature.calendar.domain.repository.CalendarRepository
+import com.kito.core.auth.AuthEvent
+import com.kito.core.auth.AuthRepository
+import com.kito.core.auth.AuthState
+import com.kito.core.auth.AuthUser
 import com.kito.feature.schedule.domain.model.ScheduleItem
 import com.kito.feature.schedule.domain.repository.ScheduleRepository
+import com.kito.core.sync.domain.SyncUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -45,4 +58,40 @@ class FakeScheduleRepository(
         MutableStateFlow(items)
     override fun getScheduleForDay(rollNo: String, day: String): Flow<List<ScheduleItem>> =
         MutableStateFlow(items.filter { it.subject.isNotEmpty() })
+}
+
+class FakeSyncUseCase : SyncUseCase {
+    override suspend fun scheduleSync(roll: String): Result<Unit> = Result.success(Unit)
+    override suspend fun syncAll(roll: String, sapPassword: String, year: String, term: String): Result<Unit> =
+        Result.success(Unit)
+}
+
+class FakeGpaRepository(private val profile: StudentProfile? = null) : GpaRepository {
+    override suspend fun getStudentProfile(roll: String): StudentProfile? = profile
+}
+
+class FakeFriendViewRepository(private val items: List<FriendScheduleItem> = emptyList()) : FriendViewRepository {
+    override suspend fun getFriendSchedule(roll: String): List<FriendScheduleItem> = items
+}
+
+class FakeHomeRepository(
+    private val events: List<EventOrAd> = emptyList(),
+    private val khaooGullyEnabled: Boolean = false,
+) : HomeRepository {
+    override suspend fun getEventsAndAds(): List<EventOrAd> = events
+    override suspend fun isKhaooGullyEnabled(): Boolean = khaooGullyEnabled
+}
+
+class FakeCalendarRepository(private val events: List<CalendarEvent> = emptyList()) : CalendarRepository {
+    override suspend fun getEventsByMonth(year: Int, month: Int): List<CalendarEvent> = events
+}
+
+class FakeAuthRepository : AuthRepository {
+    override val authState: kotlinx.coroutines.flow.StateFlow<AuthState> = MutableStateFlow(AuthState.Unauthenticated)
+    override val events: kotlinx.coroutines.flow.SharedFlow<AuthEvent> = kotlinx.coroutines.flow.MutableSharedFlow()
+    override suspend fun restoreSession() = Unit
+    override suspend fun signInWithGoogle() = Unit
+    override suspend fun signOut() = Unit
+    override suspend fun updateDisplayName(name: String) = Unit
+    override fun currentUser(): AuthUser? = null
 }

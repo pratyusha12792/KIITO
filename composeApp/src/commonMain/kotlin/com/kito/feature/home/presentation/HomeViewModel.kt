@@ -7,13 +7,15 @@ import com.kito.core.designsystem.StartupSyncGuard
 import com.kito.core.platform.ConnectivityObserver
 import com.kito.core.platform.SecureStorage
 import com.kito.core.presentation.components.state.SyncUiState
-import com.kito.core.sync.domain.AppSyncUseCase
+import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
 import com.kito.feature.home.domain.model.EventOrAd
 import com.kito.feature.home.domain.repository.HomeRepository
 import com.kito.feature.schedule.domain.model.ScheduleItem
 import com.kito.feature.schedule.domain.repository.ScheduleRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -35,9 +37,10 @@ class HomeViewModel(
     private val attendanceRepository: AttendanceRepository,
     private val scheduleRepository: ScheduleRepository,
     private val homeRepository: HomeRepository,
-    private val appSyncUseCase: AppSyncUseCase,
+    private val appSyncUseCase: SyncUseCase,
     private val syncGuard: StartupSyncGuard,
     @Provided private val connectivityObserver: ConnectivityObserver,
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     val isOnline = connectivityObserver.isOnline
     val name = prefs.userNameFlow.stateIn(
@@ -62,7 +65,7 @@ class HomeViewModel(
     )
 
     private fun fetchFeatureFlag() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             runCatching {
                 homeRepository.isKhaooGullyEnabled()
             }.onSuccess { enabled ->
@@ -74,7 +77,7 @@ class HomeViewModel(
     }
 
     private fun fetchEventsAndAds() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             runCatching { homeRepository.getEventsAndAds() }
                 .onSuccess { list ->
                     println("Ads loaded: ${list.size}")
@@ -130,7 +133,7 @@ class HomeViewModel(
     fun syncOnStartup() {
         if (syncGuard.hasSynced) return
         syncGuard.hasSynced = true
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _syncEvents.emit(SyncUiState.Loading)
             _syncState.value = SyncUiState.Loading
             val roll = prefs.userRollFlow.first()
@@ -208,7 +211,7 @@ class HomeViewModel(
     fun login(
         password: String
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             _loginState.value = SyncUiState.Loading
             delay(1000)
             val roll = prefs.userRollFlow.first()
