@@ -2,22 +2,18 @@ package com.kito.feature.auth.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kito.core.database.AppDB
-import com.kito.core.database.repository.SectionRepository
-import com.kito.core.database.repository.StudentRepository
+import com.kito.core.auth.AuthEvent
+import com.kito.core.auth.AuthRepository
+import com.kito.core.auth.AuthState
+import com.kito.core.common.util.currentLocalDateTime
 import com.kito.core.datastore.PrefsRepository
-import com.kito.core.network.supabase.SupabaseRepository
 import com.kito.core.platform.SecureStorage
 import com.kito.core.presentation.components.AppSyncUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Provided
-import com.kito.core.auth.AuthEvent
-import com.kito.core.auth.AuthRepository
-import com.kito.core.auth.AuthState
-import com.kito.core.common.util.currentLocalDateTime
 import kotlinx.datetime.number
+import org.koin.core.annotation.Provided
 
 class UserSetupViewModel(
     private val prefs: PrefsRepository,
