@@ -28,7 +28,9 @@ kotlin {
     }
 
     applyDefaultHierarchyTemplate()
-    
+
+    jvm("desktop")
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -162,6 +164,16 @@ kotlin {
             implementation(libs.sqlite.bundled)
         }
 
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.sqlite.bundled)
+                // Provides Dispatchers.Main on JVM desktop (Swing event thread)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
+            }
+        }
+
         val iosSimulatorArm64Test by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -180,10 +192,17 @@ kotlin {
     }
 }
 
+compose.desktop {
+    application {
+        mainClass = "MainKt"
+    }
+}
+
 dependencies {
     add("kspAndroid", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
+    add("kspDesktop", libs.room.compiler)
     add("androidRuntimeClasspath", libs.compose.mp.uiTooling)
 }
 
