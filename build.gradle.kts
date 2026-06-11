@@ -8,4 +8,5 @@ plugins {
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     id("com.google.dagger.hilt.android") version "2.57.2" apply false
+    alias(libs.plugins.kover) apply false
 }

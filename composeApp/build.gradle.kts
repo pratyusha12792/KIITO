@@ -179,9 +179,19 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        
+
         commonTest.dependencies {
-             implementation(kotlin("test"))
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
+            implementation(libs.ktor.client.mock)
+            implementation(libs.compose.ui.test)
+        }
+
+        val desktopTest by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+            }
         }
     }
     // On iOS, exclude Google's androidx.lifecycle to prevent duplicate symbols.

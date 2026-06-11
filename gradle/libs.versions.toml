@@ -63,6 +63,13 @@ navigation3Runtime = "1.0.0"
 # Google Tink (Encryption)
 tink = "1.15.0"
 
+# Test
+coroutines-test = "1.10.2"
+turbine = "1.2.0"
+kover = "0.9.1"
+compose-ui-test = "1.10.0"
+androidx-compose-ui-test = "1.8.2"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -161,6 +168,15 @@ androidx-navigation3-runtime = { group = "androidx.navigation3", name = "navigat
 # Google Tink (Encryption)
 tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
 
+# Test — commonTest (KMP-safe: JVM, Android local, iOS sim)
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines-test" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "compose-ui-test" }
+# Test — Android instrumented only
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-compose-ui-test" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose-ui-test" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
@@ -172,4 +188,6 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMul
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 # Koin native Kotlin Compiler Plugin
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinPlugin" }
+# Kover code coverage
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
