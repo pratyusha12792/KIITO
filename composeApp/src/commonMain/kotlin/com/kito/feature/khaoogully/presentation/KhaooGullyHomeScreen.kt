@@ -4,6 +4,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -112,20 +114,25 @@ fun KhaooGullyHomeScreen(
         }
     )
 
-    KhaooGullyHomeContent(
-        state = state,
-        showCampusMenu = showCampusMenu,
-        onShowCampusMenuChange = { showCampusMenu = it },
-        onSearchChange = viewModel::onSearchQueryChange,
-        onCategoryClick = viewModel::onCategorySelected,
-        onRestaurantClick = onRestaurantClick,
-        onRetry = viewModel::loadHomeData,
-        onCampusClick = { campus ->
-            viewModel.onCampusSelected(campus)
-            showCampusMenu = false
-        },
-        onLocationClick = { showCampusMenu = true }
-    )
+    SharedExpandContainer(
+        routeKey = Routes.Calendar,
+        backgroundColor = ScreenBg,
+    ) {
+        KhaooGullyHomeContent(
+            state = state,
+            showCampusMenu = showCampusMenu,
+            onShowCampusMenuChange = { showCampusMenu = it },
+            onSearchChange = viewModel::onSearchQueryChange,
+            onCategoryClick = viewModel::onCategorySelected,
+            onRestaurantClick = onRestaurantClick,
+            onRetry = viewModel::loadHomeData,
+            onCampusClick = { campus ->
+                viewModel.onCampusSelected(campus)
+                showCampusMenu = false
+            },
+            onLocationClick = { showCampusMenu = true }
+        )
+    }
 }
 
 @Composable
@@ -141,53 +148,48 @@ fun KhaooGullyHomeContent(
     onLocationClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    SharedExpandContainer(
-        routeKey = Routes.Calendar,
-        backgroundColor = ScreenBg,
+    Box(
         modifier = modifier
+            .fillMaxSize()
+            .background(ScreenBg)
+            .semantics { testTag = "khaoogully_content" }
     ) {
+        // ── Green top gradient ────────────────────────────────────────────────
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(ScreenBg)
-        ) {
-            // ── Green top gradient (matches screenshot) ───────────────────────────
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.15f)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color(0xFFA8EDCA),  // mint green at top
-                                ScreenBg           // blends into page bg
-                            )
+                .fillMaxWidth()
+                .fillMaxHeight(0.15f)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFA8EDCA),
+                            ScreenBg
                         )
                     )
-            )
-
-            when {
-                state.isLoading -> FullScreenLoader()
-                state.error != null && state.restaurants.isEmpty() ->
-                    FullScreenError(message = state.error, onRetry = onRetry)
-                else -> HomeScrollContent(
-                    state             = state,
-                    onSearchChange    = onSearchChange,
-                    onCategoryClick   = onCategoryClick,
-                    onRestaurantClick = onRestaurantClick,
-                    onLocationClick   = onLocationClick
                 )
-            }
-        }
+        )
 
-        if (showCampusMenu) {
-            CampusSelectionDialog(
-                campuses       = state.availableCampuses,
-                selectedCampus = state.selectedCampus,
-                onCampusClick  = onCampusClick,
-                onDismiss      = { onShowCampusMenuChange(false) }
+        when {
+            state.isLoading -> FullScreenLoader()
+            state.error != null && state.restaurants.isEmpty() ->
+                FullScreenError(message = state.error, onRetry = onRetry)
+            else -> HomeScrollContent(
+                state             = state,
+                onSearchChange    = onSearchChange,
+                onCategoryClick   = onCategoryClick,
+                onRestaurantClick = onRestaurantClick,
+                onLocationClick   = onLocationClick
             )
         }
+    }
+
+    if (showCampusMenu) {
+        CampusSelectionDialog(
+            campuses       = state.availableCampuses,
+            selectedCampus = state.selectedCampus,
+            onCampusClick  = onCampusClick,
+            onDismiss      = { onShowCampusMenuChange(false) }
+        )
     }
 }
 

@@ -47,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -108,7 +110,8 @@ fun FacultyDetailContent(
     syncState: SyncUiState,
     faculty: Faculty?,
     schedule: List<FacultyScheduleSlot>,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    enableAnimations: Boolean = true
 ) {
     val uiColors = UIColors()
     val hazeState = rememberHazeState()
@@ -141,6 +144,7 @@ fun FacultyDetailContent(
         }
     }
     LaunchedEffect(Unit) {
+        if (!enableAnimations) return@LaunchedEffect
         meshColorAnimators.forEachIndexed { i, anim ->
             launch {
                 val random = kotlin.random.Random(i * 97)
@@ -158,6 +162,7 @@ fun FacultyDetailContent(
         }
     }
     LaunchedEffect(Unit) {
+        if (!enableAnimations) return@LaunchedEffect
         launch {
             while (true) {
                 animatedPointMid.animateTo(
@@ -199,7 +204,9 @@ fun FacultyDetailContent(
 
     Box(modifier = Modifier.hazeSource(cardHaze)) {
         Box(
-            modifier = Modifier.background(Color(0xFF121116))
+            modifier = Modifier
+                .background(Color(0xFF121116))
+                .semantics { testTag = "faculty_detail_content" }
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(
