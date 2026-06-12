@@ -340,6 +340,7 @@ sealed interface AttendanceListEvent {
 fun AttendanceListContent(
     state: AttendanceListUiState,
     onEvent: (AttendanceListEvent) -> Unit,
+    enableAnimations: Boolean = true,
 ) {
     val cardHaze = rememberHazeState()
     val uiColors = UIColors()
@@ -391,6 +392,7 @@ fun AttendanceListContent(
                             percentageOverall = state.averageAttendancePercentage,
                             percentageHighest = state.highestAttendancePercentage,
                             percentageLowest = state.lowestAttendancePercentage,
+                            enableAnimations = enableAnimations,
                         )
                     }
 

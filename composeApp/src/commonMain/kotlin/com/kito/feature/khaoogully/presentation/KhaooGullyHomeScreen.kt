@@ -4,6 +4,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -110,48 +113,48 @@ fun KhaooGullyHomeScreen(
             }
         }
     )
+
     SharedExpandContainer(
         routeKey = Routes.Calendar,
         backgroundColor = ScreenBg,
     ) {
-        FoodHomeContent(
-            state             = state,
-            onSearchChange    = viewModel::onSearchQueryChange,
-            onCategoryClick   = viewModel::onCategorySelected,
+        KhaooGullyHomeContent(
+            state = state,
+            showCampusMenu = showCampusMenu,
+            onShowCampusMenuChange = { showCampusMenu = it },
+            onSearchChange = viewModel::onSearchQueryChange,
+            onCategoryClick = viewModel::onCategorySelected,
             onRestaurantClick = onRestaurantClick,
-            onRetry           = viewModel::loadHomeData,
-            onLocationClick   = { showCampusMenu = true }
+            onRetry = viewModel::loadHomeData,
+            onCampusClick = { campus ->
+                viewModel.onCampusSelected(campus)
+                showCampusMenu = false
+            },
+            onLocationClick = { showCampusMenu = true }
         )
-
-        if (showCampusMenu) {
-            CampusSelectionDialog(
-                campuses       = state.availableCampuses,
-                selectedCampus = state.selectedCampus,
-                onCampusClick  = {
-                    viewModel.onCampusSelected(it)
-                    showCampusMenu = false
-                },
-                onDismiss      = { showCampusMenu = false }
-            )
-        }
     }
 }
 
 @Composable
-private fun FoodHomeContent(
+fun KhaooGullyHomeContent(
     state: FoodHomeUiState,
+    showCampusMenu: Boolean,
+    onShowCampusMenuChange: (Boolean) -> Unit,
     onSearchChange: (String) -> Unit,
     onCategoryClick: (KgCategory) -> Unit,
     onRestaurantClick: (KgRestaurant) -> Unit,
     onRetry: () -> Unit,
-    onLocationClick: () -> Unit
+    onCampusClick: (String?) -> Unit,
+    onLocationClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(ScreenBg)
+            .semantics { testTag = "khaoogully_content" }
     ) {
-        // ── Green top gradient (matches screenshot) ───────────────────────────
+        // ── Green top gradient ────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -159,8 +162,8 @@ private fun FoodHomeContent(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFFA8EDCA),  // mint green at top
-                            ScreenBg           // blends into page bg
+                            Color(0xFFA8EDCA),
+                            ScreenBg
                         )
                     )
                 )
@@ -178,6 +181,15 @@ private fun FoodHomeContent(
                 onLocationClick   = onLocationClick
             )
         }
+    }
+
+    if (showCampusMenu) {
+        CampusSelectionDialog(
+            campuses       = state.availableCampuses,
+            selectedCampus = state.selectedCampus,
+            onCampusClick  = onCampusClick,
+            onDismiss      = { onShowCampusMenuChange(false) }
+        )
     }
 }
 
@@ -238,7 +250,7 @@ private fun LocationHeader(selectedCampus: String?, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(selectedCampus ?: "All Campuses", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 Spacer(Modifier.width(4.dp))
-                Icon(Icons.Default.ArrowForward, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -569,4 +581,59 @@ private fun CampusOptionRow(name: String, isSelected: Boolean, onClick: () -> Un
             modifier   = Modifier.weight(1f)
         )
     }
+}
+
+@Preview
+@Composable
+private fun KhaooGullyHomeContentPreview() {
+    val dummyCategories = listOf(
+        KgCategory("Pizza", null),
+        KgCategory("Burgers", null),
+        KgCategory("Drinks", null)
+    )
+    val dummyRestaurants = listOf(
+        KgRestaurant(
+            id = "1",
+            name = "Domino's Pizza",
+            image = null,
+            cuisine = listOf("Pizza", "Fast Food"),
+            rating = 4.2f,
+            campusName = "East Campus",
+            deliveryWindow = "20-30 mins",
+            poolId = null,
+            browseOnly = false
+        ),
+        KgRestaurant(
+            id = "2",
+            name = "Burger King",
+            image = null,
+            cuisine = listOf("Burgers", "Fast Food"),
+            rating = 4.0f,
+            campusName = "West Campus",
+            deliveryWindow = "15-25 mins",
+            poolId = null,
+            browseOnly = true
+        )
+    )
+    val dummyState = FoodHomeUiState(
+        isLoading = false,
+        error = null,
+        categories = dummyCategories,
+        restaurants = dummyRestaurants,
+        filteredRestaurants = dummyRestaurants,
+        searchQuery = "",
+        selectedCategory = null,
+        selectedCampus = null
+    )
+    KhaooGullyHomeContent(
+        state = dummyState,
+        showCampusMenu = false,
+        onShowCampusMenuChange = {},
+        onSearchChange = {},
+        onCategoryClick = {},
+        onRestaurantClick = {},
+        onRetry = {},
+        onCampusClick = {},
+        onLocationClick = {}
+    )
 }

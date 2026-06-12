@@ -51,8 +51,7 @@ fun OverallAttendanceCard(
     percentageOverall: Double,
     percentageHighest: Double,
     percentageLowest: Double,
-//    onClick:() -> Unit,
-//    onNavigate:()-> Unit,
+    enableAnimations: Boolean = true,
 ) {
     var targetProgressOverall by remember { mutableFloatStateOf(0f) }
     var targetProgressHighest by remember { mutableFloatStateOf(0f) }
@@ -103,6 +102,7 @@ fun OverallAttendanceCard(
         }
     }
     LaunchedEffect(Unit) {
+        if (!enableAnimations) return@LaunchedEffect
         meshColorAnimators.forEachIndexed { i, anim ->
             launch {
                 val random = kotlin.random.Random(i * 97)
@@ -120,6 +120,7 @@ fun OverallAttendanceCard(
         }
     }
     LaunchedEffect(Unit) {
+        if (!enableAnimations) return@LaunchedEffect
         launch {
             while (true) {
                 animatedPointMid.animateTo(
