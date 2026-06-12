@@ -17,6 +17,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
+      - name: Restore sensitive SAP files
+        if: ${{ env.SAP_SENSITIVE_FILES != '' }}
+        env:
+          SAP_SENSITIVE_FILES: ${{ secrets.SAP_SENSITIVE_FILES }}
+        run: echo "$SAP_SENSITIVE_FILES" | base64 -d | tar xz
       - run: ./gradlew :composeApp:compileAndroidMain :androidApp:compileDebugKotlin :composeApp:desktopTest :androidApp:koverVerify --console=plain
       - name: Upload coverage XML
         uses: actions/upload-artifact@v4
