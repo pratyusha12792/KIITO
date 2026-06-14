@@ -70,6 +70,13 @@ class GPAViewmodel(
         }
     }
 
-    fun updateSemester(semester: Int) { _semester.value = semester }
-    fun updateBranch(branch: String) { _branch.value = branch }
+    fun onEvent(event: GPAEvent) {
+        when (event) {
+            is GPAEvent.UpdateSemester -> updateSemester(event.semester)
+            is GPAEvent.UpdateBranch -> updateBranch(event.branch)
+        }
+    }
+
+    private fun updateSemester(semester: Int) { _semester.value = semester }
+    private fun updateBranch(branch: String) { _branch.value = branch }
 }
