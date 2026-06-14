@@ -84,6 +84,7 @@ import kotlinx.coroutines.delay
 import kotlinx.datetime.DayOfWeek
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun HomeScreen(
@@ -139,7 +140,7 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
-        delay(1000)
+        delay(1000.milliseconds)
         if (isOnline) {
             viewmodel.syncOnStartup()
         } else {
