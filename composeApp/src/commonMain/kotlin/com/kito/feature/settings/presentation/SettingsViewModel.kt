@@ -82,24 +82,24 @@ class SettingsViewModel(
     private val _pendingNotificationEnable = MutableStateFlow(false)
     val pendingNotificationEnable = _pendingNotificationEnable.asStateFlow()
 
-    fun requestEnableNotifications() {
+    private fun requestEnableNotifications() {
         _pendingNotificationEnable.value = true
     }
 
-    fun clearPendingNotificationEnable() {
+    private fun clearPendingNotificationEnable() {
         _pendingNotificationEnable.value = false
     }
 
-    fun retryPendingNotificationEnable() {
+    private fun retryPendingNotificationEnable() {
         if (pendingNotificationEnable.value) {
             _pendingNotificationEnable.value = true
         }
     }
 
-    fun syncStateIdle(){
+    private fun syncStateIdle(){
         _syncState.value = SyncUiState.Idle
     }
-    fun changeName(name: String){
+    private fun changeName(name: String){
         viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
@@ -120,7 +120,7 @@ class SettingsViewModel(
             }
         }
     }
-    fun changeRoll(roll: String){
+    private fun changeRoll(roll: String){
         viewModelScope.launch(dispatcher) {
             val result = runCatching {
                 _syncState.value = SyncUiState.Loading
@@ -143,7 +143,7 @@ class SettingsViewModel(
         }
     }
 
-    fun changeAttendance(attendance: Int){
+    private fun changeAttendance(attendance: Int){
         viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
@@ -155,7 +155,7 @@ class SettingsViewModel(
             }
         }
     }
-    fun changeYearTerm(year: String, term: String) {
+    private fun changeYearTerm(year: String, term: String) {
         viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
@@ -182,7 +182,7 @@ class SettingsViewModel(
             }
         }
     }
-    fun logOut(){
+    private fun logOut(){
         viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
             delay(1000.milliseconds)
@@ -195,7 +195,7 @@ class SettingsViewModel(
             }
         }
     }
-    fun logIn(password: String) {
+    private fun logIn(password: String) {
         viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
             delay(1000.milliseconds)
@@ -221,10 +221,26 @@ class SettingsViewModel(
             )
         }
     }
-    fun setNotificationState(state: Boolean){
+    private fun setNotificationState(state: Boolean){
         viewModelScope.launch(dispatcher) {
             prefs.setNotificationState(state)
             notificationController.sync()
+        }
+    }
+
+    fun onEvent(event: SettingsEvent) {
+        when (event) {
+            SettingsEvent.RequestEnableNotifications -> requestEnableNotifications()
+            SettingsEvent.ClearPendingNotificationEnable -> clearPendingNotificationEnable()
+            SettingsEvent.RetryPendingNotificationEnable -> retryPendingNotificationEnable()
+            SettingsEvent.SyncStateIdle -> syncStateIdle()
+            is SettingsEvent.ChangeName -> changeName(event.name)
+            is SettingsEvent.ChangeRoll -> changeRoll(event.roll)
+            is SettingsEvent.ChangeAttendance -> changeAttendance(event.attendance)
+            is SettingsEvent.ChangeYearTerm -> changeYearTerm(event.year, event.term)
+            SettingsEvent.LogOut -> logOut()
+            is SettingsEvent.LogIn -> logIn(event.password)
+            is SettingsEvent.SetNotificationState -> setNotificationState(event.state)
         }
     }
 }

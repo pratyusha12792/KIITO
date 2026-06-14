@@ -122,7 +122,7 @@ fun AttendanceBarCard(
     LaunchedEffect(Unit) {
         meshColorAnimators.forEachIndexed { i, anim ->
             launch {
-                val random = kotlin.random.Random(i * 97)
+                val random = Random(i * 97)
                 while (true) {
                     val nextColor = meshColors[random.nextInt(meshColors.size)]
                     anim.animateTo(
@@ -371,14 +371,6 @@ fun WaterAnimation(
 
     var waveShift by remember { mutableFloatStateOf(0f) }
 
-    val colors = UIColors()
-//    val waterBrush = Brush.verticalGradient(
-//        0.0f to colors.accentOrangeEnd.copy(alpha = 0.9f),
-//        0.35f to colors.accentOrangeStart,
-//        0.75f to colors.progressAccent,
-//        1.0f to Color(0xFF5A2A05)
-//    )
-
     val waterBrush = Brush.verticalGradient(
         0.0f to Color(0xFFFFF6E0),
         0.18f to Color(0xFFFFD37A),
@@ -521,70 +513,3 @@ fun String.toAbbreviation(): String {
         .map { it.first().uppercaseChar() }
         .joinToString("")
 }
-
-private val sampleAttendanceEntities = listOf(
-    Attendance(
-        subjectCode = "00F4",
-        subjectName = "Data Mining and Data Warehousing",
-        attendedClasses = 4,
-        totalClasses = 41,
-        percentage = (4.0 / 41) * 100,
-        facultyName = "Amiya Ranjan Panda",
-    ),
-    Attendance(
-        subjectCode = "00F5",
-        subjectName = "Engineering Economics",
-        attendedClasses = 4,
-        totalClasses = 39,
-        percentage = (4.0 / 39) * 100,
-        facultyName = "Arvind Kumar Yadav",
-    ),
-    Attendance(
-        subjectCode = "00F6",
-        subjectName = "Design and Analysis of Algorithms",
-        attendedClasses = 1,
-        totalClasses = 41,
-        percentage = (1.0 / 41) * 100,
-        facultyName = "Partha Sarathi Paul",
-    ),
-    Attendance(
-        subjectCode = "00F7",
-        subjectName = "Software Engineering",
-        attendedClasses = 24,
-        totalClasses = 52,
-        percentage = (24.0 / 52) * 100,
-        facultyName = "Ipsita Paul",
-    ),
-    Attendance(
-        subjectCode = "00F8",
-        subjectName = "Computer Networks",
-        attendedClasses = 10,
-        totalClasses = 40,
-        percentage = (10.0 / 40) * 100,
-        facultyName = "Nitin Varyani",
-    ),
-    Attendance(
-        subjectCode = "00F9",
-        subjectName = "Artificial Intelligence",
-        attendedClasses = 18,
-        totalClasses = 45,
-        percentage = (18.0 / 45) * 100,
-        facultyName = "Saswati Mishra",
-    ),
-    Attendance(
-        subjectCode = "00G0",
-        subjectName = "Compiler Design",
-        attendedClasses = 12,
-        totalClasses = 38,
-        percentage = (12.0 / 38) * 100,
-        facultyName = "Debasish Nayak",
-    ),
-    Attendance(
-        subjectCode = "00G1",
-        subjectName = "Cloud Computing",
-        attendedClasses = 30,
-        totalClasses = 48,
-        percentage = (30.0 / 48) * 100,
-        facultyName = "Rashmi Ranjan Behera",
-    )
-)

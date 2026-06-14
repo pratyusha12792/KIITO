@@ -62,6 +62,7 @@ import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.round
 import kotlin.math.roundToInt
 
 internal fun classesRequiredForPercentage(
@@ -79,51 +80,8 @@ internal fun calculateAttendancePercentage1Decimal(
     totalClasses: Int
 ): Double {
     if (totalClasses == 0) return 0.0
-    return kotlin.math.round((attendedClasses.toDouble() / totalClasses) * 100 * 10) / 10
+    return round((attendedClasses.toDouble() / totalClasses) * 100 * 10) / 10
 }
-
-val sampleAttendance = listOf(
-    Attendance(
-        subjectCode = "00F4",
-        subjectName = "Data Mining and Data Warehousing",
-        attendedClasses = 4,
-        totalClasses = 41,
-        percentage = (4.0 / 41) * 100,
-        facultyName = "Amiya Ranjan Panda"
-    ),
-    Attendance(
-        subjectCode = "00F5",
-        subjectName = "Engineering Economics",
-        attendedClasses = 4,
-        totalClasses = 39,
-        percentage = (4.0 / 39) * 100,
-        facultyName = "Arvind Kumar Yadav"
-    ),
-    Attendance(
-        subjectCode = "00F6",
-        subjectName = "Design and Analysis of Algorithms",
-        attendedClasses = 1,
-        totalClasses = 41,
-        percentage = (1.0 / 41) * 100,
-        facultyName = "Partha Sarathi Paul"
-    ),
-    Attendance(
-        subjectCode = "00F7",
-        subjectName = "Software Engineering",
-        attendedClasses = 24,
-        totalClasses = 52,
-        percentage = (24.0 / 52) * 100,
-        facultyName = "Ipsita Paul"
-    ),
-    Attendance(
-        subjectCode = "00F8",
-        subjectName = "Computer Networks",
-        attendedClasses = 10,
-        totalClasses = 40,
-        percentage = (10.0 / 40) * 100,
-        facultyName = "Nitin Varyani"
-    )
-)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalHazeMaterialsApi::class,
     ExperimentalHazeApi::class

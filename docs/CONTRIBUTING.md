@@ -40,6 +40,19 @@ feature/<name>/
     └── components/
 ```
 
+### File Atomicity (Mandatory across all layers)
+To prevent bloated files, avoid merge conflicts, and keep the codebase modular, **every file must be strictly atomic**. This means each file must contain exactly one class, interface, function, or configuration object.
+
+This rule is strictly enforced across all layers of a feature:
+- **Domain Layer**:
+  - Each domain model (`*Model.kt`), repository interface (`*Repository.kt`), and usecase (`*UseCase.kt`) must reside in its own dedicated file.
+- **Data Layer**:
+  - The repository implementation (`*RepositoryImpl.kt`), each data source, and each mapping function or class must be defined in its own file.
+- **Presentation Layer**:
+  - The stateful screen wrapper (`*Screen.kt`), stateless content layout (`*Content.kt`), and ViewModel (`*ViewModel.kt`) must each have their own separate files.
+  - UI state models (`*UiState.kt`), event classes (`*Event.kt`), and side-effect events (`*UiEvent.kt`) must not be bundled together or inside the ViewModel file; each must reside in a separate dedicated file.
+  - All sub-composables, shimmers, local helper functions, sorting logic, and configuration constants/maps must be extracted into their own individual, atomic `.kt` files inside the `components/` subfolder.
+
 ### The golden rule (enforced by CI)
 **No Room entity or network DTO import in any `presentation/` file — ever.**
 
@@ -66,32 +79,27 @@ presentation → domain ← data
 - No `toast()` calls inside stateless `*Content` composables — keep them pure
 
 ### Screen structure (mandatory)
-Every screen **must** be split into two composables:
+Every screen **must** be split into separate, atomic files:
 
-```kotlin
-// Stateful wrapper — DI only, no UI logic
-@Composable
-fun FeatureScreen(viewModel: FeatureViewModel = koinInject()) {
-    val state by viewModel.state.collectAsState()
-    FeatureContent(state = state, onEvent = viewModel::onEvent)
-}
-
-// Stateless content — previewable, testable, no DI
-@Composable
-fun FeatureContent(state: ..., onEvent: ...) { ... }
-
-@Preview
-@Composable
-private fun FeatureContentPreview() {
-    FeatureContent(state = ..., onEvent = {})
-}
-```
+1. **Stateful Screen (`*Screen.kt`)**: Placed in the root of the feature's `presentation` folder. This is a thin stateful wrapper containing **only** Koin DI injection, state collection, and delegation to the stateless content.
+2. **Stateless Content (`*Content.kt`)**: Placed in the root of the feature's `presentation` folder. This contains the layout logic and must be pure, previewable, and testable without DI. The `@Preview` function for the content can remain at the bottom of this file.
+3. **Components & Helpers (`components/` subfolder)**:
+   - Sub-composables, custom layouts, and shimmers (e.g. `FeatureShimmerItem`, `FeatureItemCard`) must go in their own dedicated files inside the `components/` subfolder.
+   - Helper/utility functions (e.g. `formatValue`), sorting logic, and configuration maps/constants (e.g. `categoryPriorityMap`) must be extracted into their own individual, atomic `.kt` files inside the `components/` subfolder.
+   - Absolutely no bloated files containing multiple unrelated top-level classes, functions, or configurations are permitted.
 
 Rules:
 - `*Screen` — injects ViewModel via Koin, collects state, delegates to `*Content`
 - `*Content` — pure composable, no `koinInject()`, no `collectAsState()`, previewable without DI
 - Navigation-aware components (`SharedExpandContainer`, `LocalNavAnimatedContentScope`) go in `*Screen` only — never in `*Content`
 - If `*Content` has `while(true)` animation loops, add `enableAnimations: Boolean = true` param and guard every loop: `LaunchedEffect(Unit) { if (!enableAnimations) return@LaunchedEffect; while(true) { ... } }`
+
+### State and Event Separation
+- **Separate Files**: Do not keep `*UiState` or `*Event` classes inside the same file as the ViewModel or Screen. Place each of them in their own dedicated `.kt` file at the root of the screen/feature package to keep files clean and readable.
+- **Unidirectional Event Pipeline**:
+  - Composables must not invoke ViewModel functions directly. Instead, all user interactions must be sent to the ViewModel as UI Events via `viewModel.onEvent(event)`.
+  - Define `*Event.kt` for UI actions sent *to* the ViewModel (e.g. `FeatureEvent.SubmitAction`).
+  - Define `*UiEvent.kt` for navigation or side-effect events sent *from* the ViewModel back to the screen (e.g. `FeatureUiEvent.NavigationTriggered`).
 
 ### Dependency Injection (Koin)
 - Every feature owns its own `di/<Name>Module.kt`
@@ -122,6 +130,10 @@ Every PR must include tests covering what was added or changed:
 - **Use shared fakes** from `com.kito.testing` — do not create MockK mocks in commonTest (JVM-only, breaks iOS)
 - **Inject `TestDispatcher`** via the `dispatcher` constructor param in VMs
 - **No real I/O** — use `FakeRepository`, `FakeSyncUseCase`, temp DataStore file
+- **DataStore Testing Constraints**:
+  - **Single Active Instance**: Avoid the `multiple active DataStores` conflict by passing a trackable `CoroutineScope(testDispatcher + SupervisorJob())` to `PreferenceDataStoreFactory.createWithPath(...)`, and calling `datastoreScope.cancel()` in your `@AfterTest` teardown. This releases the file lock before the next test runs.
+  - **No `java.io.File`**: Do not use standard JVM `java.io.File` or its JVM-specific `toOkioPath()` extension inside `commonTest` (which breaks iOS and non-JVM target builds). Instead, use Okio's generic `toPath()` extension on `String` (e.g. `"test.preferences_pb".toPath()`) and delete it via `FileSystem.SYSTEM.delete(path)`.
+  - **Import `okio.SYSTEM`**: When deleting files via `FileSystem.SYSTEM`, make sure to explicitly include `import okio.SYSTEM` in your imports, as it is an extension property and will not compile on KMP targets without this import.
 - **Naming**: `methodOrScenario_condition_expectedResult` e.g. `toDomain_nullOfficeRoom_mapsToNull`
 
 ### Compose UI tests
@@ -169,6 +181,7 @@ All existing tests must still pass. New tests must pass.
 | Put feature-specific UI in `core/` | Put it in `feature/<name>/presentation/components/` |
 | Put DI (`koinInject`) or nav scope in `*Content` composable | Keep those in the stateful `*Screen` wrapper |
 | Leave `while(true)` loops unguarded in `*Content` | Add `enableAnimations: Boolean = true` and guard the loop |
+| Keep helpers, configurations, or multiple composables/functions in Screen/Content files | Extract each helper function, constant, configuration map, and sub-composable into its own atomic `.kt` file under `components/` |
 | Wildcard imports (`import com.kito.*`) | Explicit imports only |
 | Commit generated files (`build/`, `.idea/`) | They're gitignored — don't force-add |
 | Touch `sap/sensitive/` files in PRs | These are gitignored intentionally |
@@ -185,6 +198,7 @@ Before requesting review, verify every item:
 - [ ] No `database.entity` or `supabase.model` imports in any `presentation/` file
 - [ ] New feature has: domain model, repository interface, mapper, DI module, mapper test
 - [ ] Screen has stateless `*Content(params, lambdas)` composable + `@Preview`
+- [ ] **Files are atomic**: No helper functions, configuration constants, or sub-composables are in screen or content files; each resides in its own `.kt` file under `components/`
 - [ ] `*Content` has `testTag` on key nodes (list, empty, loading) and a Compose UI test
 - [ ] `*Content` has `enableAnimations: Boolean = true` if it contains any `while(true)` animation loop
 - [ ] ViewModel has `CoroutineDispatcher` constructor param with default
