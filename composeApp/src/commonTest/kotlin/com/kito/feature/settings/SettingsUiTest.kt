@@ -5,7 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.test.runComposeUiTest
 import com.kito.core.presentation.components.state.SyncUiState
 import com.kito.feature.settings.presentation.SettingsContent
 import kotlin.test.Test
@@ -26,16 +26,7 @@ class SettingsUiTest {
                 isLoggedIn = true,
                 syncState = SyncUiState.Idle,
                 pendingEnable = false,
-                onNameChange = {},
-                onRollChange = {},
-                onYearTermChange = { _, _ -> },
-                onAttendanceChange = {},
-                onLogin = {},
-                onLogout = {},
-                onSyncSuccess = {},
-                onSetNotificationState = {},
-                onClearPendingNotificationEnable = {},
-                onRequestEnableNotifications = {},
+                onEvent = {},
                 tabNavBackStack = null,
                 snackbarHostState = remember { SnackbarHostState() }
             )

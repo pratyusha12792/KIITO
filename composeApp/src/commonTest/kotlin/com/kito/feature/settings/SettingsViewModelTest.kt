@@ -6,17 +6,22 @@ import com.kito.core.platform.SecureStorage
 import com.kito.core.presentation.components.state.SyncUiState
 import com.kito.feature.schedule.notification.NotificationController
 import com.kito.feature.settings.presentation.SettingsViewModel
+import com.kito.feature.settings.presentation.SettingsEvent
 import com.kito.testing.FakeAttendanceRepository
 import com.kito.testing.FakeAuthRepository
 import com.kito.testing.FakeSyncUseCase
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import okio.Path.Companion.toOkioPath
-import java.io.File
+import okio.FileSystem
+import okio.Path.Companion.toPath
+import okio.SYSTEM
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -26,15 +31,35 @@ import kotlin.test.assertIs
 class SettingsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private lateinit var tempFile: File
+    private val tempPath = "settings_prefs_test.preferences_pb".toPath()
+    private lateinit var prefsRepository: PrefsRepository
+    private lateinit var datastoreScope: CoroutineScope
 
-    @BeforeTest fun setup() { Dispatchers.setMain(testDispatcher); tempFile = File.createTempFile("settings_prefs_", ".preferences_pb") }
-    @AfterTest  fun teardown() { Dispatchers.resetMain(); tempFile.delete() }
+    @BeforeTest
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        datastoreScope = CoroutineScope(testDispatcher + SupervisorJob())
+        prefsRepository = PrefsRepository(
+            PreferenceDataStoreFactory.createWithPath(
+                scope = datastoreScope,
+                produceFile = { tempPath }
+            )
+        )
+    }
 
-    private fun prefs() = PrefsRepository(PreferenceDataStoreFactory.createWithPath { tempFile.toOkioPath() })
+    @AfterTest
+    fun teardown() {
+        datastoreScope.cancel()
+        Dispatchers.resetMain()
+        try {
+            FileSystem.SYSTEM.delete(tempPath)
+        } catch (_: Exception) {
+            // ignore
+        }
+    }
 
     private fun vm() = SettingsViewModel(
-        prefs = prefs(),
+        prefs = prefsRepository,
         secureStorage = SecureStorage(),
         attendanceRepository = FakeAttendanceRepository(),
         appSyncUseCase = FakeSyncUseCase(),
@@ -51,7 +76,7 @@ class SettingsViewModelTest {
     @Test
     fun setSyncStateIdle_resetsToIdle() = runTest(testDispatcher) {
         val v = vm()
-        v.syncStateIdle()
+        v.onEvent(SettingsEvent.SyncStateIdle)
         assertIs<SyncUiState.Idle>(v.syncState.value)
     }
 }
