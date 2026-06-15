@@ -8,19 +8,20 @@ import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.model.AttendanceSummary
 import com.kito.feature.attendance.domain.usecase.GetAttendanceSummaryUseCase
-import com.kito.feature.attendance.domain.usecase.GetRequiredAttendanceUseCase
-import com.kito.feature.attendance.domain.usecase.GetSapPasswordUseCase
-import com.kito.feature.attendance.domain.usecase.GetUserSyncPreferencesUseCase
-import com.kito.feature.attendance.domain.usecase.IsSapLoggedInUseCase
-import com.kito.feature.attendance.domain.usecase.SaveSapPasswordUseCase
+import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
+import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
+import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
+import com.kito.core.datastore.domain.usecase.GetRequiredAttendanceUseCase
+import com.kito.core.datastore.domain.repository.PrefsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -29,7 +30,7 @@ import org.koin.core.annotation.Provided
 class AttendanceListScreenViewModel(
     private val getAttendanceSummary: GetAttendanceSummaryUseCase,
     private val getRequiredAttendance: GetRequiredAttendanceUseCase,
-    private val getUserSyncPreferences: GetUserSyncPreferencesUseCase,
+    private val prefs: PrefsRepository,
     private val getSapPassword: GetSapPasswordUseCase,
     private val isSapLoggedIn: IsSapLoggedInUseCase,
     private val saveSapPassword: SaveSapPasswordUseCase,
@@ -40,7 +41,6 @@ class AttendanceListScreenViewModel(
 
     val isOnline = connectivityRepository.isOnline
     private val _syncState = MutableStateFlow<SyncUiState>(SyncUiState.Idle)
-    val syncState = _syncState.asStateFlow()
 
     private val _syncEvents = MutableSharedFlow<SyncUiState>()
     val syncEvents: SharedFlow<SyncUiState> = _syncEvents
@@ -49,11 +49,10 @@ class AttendanceListScreenViewModel(
         viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
 
-            val syncConfig = getUserSyncPreferences()
-            val roll = syncConfig.roll
+            val roll = prefs.userRollFlow.first()
             val sapPassword = getSapPassword()
-            val year = syncConfig.year
-            val term = syncConfig.term
+            val year = prefs.academicYearFlow.first()
+            val term = prefs.termCodeFlow.first()
 
             val result = appSyncUseCase.syncAll(
                 roll = roll,
@@ -78,7 +77,7 @@ class AttendanceListScreenViewModel(
         _syncState.value = SyncUiState.Idle
     }
 
-    val sapLoggedIn = isSapLoggedIn()
+    private val sapLoggedIn = isSapLoggedIn()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -92,7 +91,7 @@ class AttendanceListScreenViewModel(
                 initialValue = AttendanceSummary.Empty
             )
 
-    val attendance: StateFlow<List<Attendance>> =
+    private val attendance: StateFlow<List<Attendance>> =
         summary
             .map { it.items }
             .stateIn(
@@ -100,7 +99,7 @@ class AttendanceListScreenViewModel(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
-    val requiredAttendance = getRequiredAttendance()
+    private val requiredAttendance = getRequiredAttendance()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -108,27 +107,53 @@ class AttendanceListScreenViewModel(
         )
 
     private val _loginState = MutableStateFlow<SyncUiState>(SyncUiState.Idle)
-    val loginState = _loginState.asStateFlow()
 
-    val averageAttendancePercentage: StateFlow<Double> =
+    private val averageAttendancePercentage: StateFlow<Double> =
         summary.map { it.averagePercentage }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
-    val highestAttendancePercentage: StateFlow<Double> =
+    private val highestAttendancePercentage: StateFlow<Double> =
         summary.map { it.highestPercentage }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
-    val lowestAttendancePercentage: StateFlow<Double> =
+    private val lowestAttendancePercentage: StateFlow<Double> =
         summary.map { it.lowestPercentage }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+
+    val uiState: StateFlow<AttendanceListUiState> = combine(
+        isOnline,
+        _syncState,
+        sapLoggedIn,
+        attendance,
+        requiredAttendance,
+        _loginState,
+        averageAttendancePercentage,
+        highestAttendancePercentage,
+        lowestAttendancePercentage
+    ) { array ->
+        AttendanceListUiState(
+            isOnline = array[0] as Boolean,
+            syncState = array[1] as SyncUiState,
+            sapLoggedIn = array[2] as Boolean,
+            attendance = array[3] as List<Attendance>,
+            requiredAttendance = array[4] as Int,
+            loginState = array[5] as SyncUiState,
+            averageAttendancePercentage = array[6] as Double,
+            highestAttendancePercentage = array[7] as Double,
+            lowestAttendancePercentage = array[8] as Double
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = AttendanceListUiState()
+    )
 
     fun login(
         password: String
     ){
         viewModelScope.launch(dispatcher) {
             _loginState.value = SyncUiState.Loading
-            val syncConfig = getUserSyncPreferences()
-            val roll = syncConfig.roll
-            val year = syncConfig.year
-            val term = syncConfig.term
+            val roll = prefs.userRollFlow.first()
+            val year = prefs.academicYearFlow.first()
+            val term = prefs.termCodeFlow.first()
 
             val result = appSyncUseCase.syncAll(
                 roll = roll,

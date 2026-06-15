@@ -58,10 +58,16 @@ class FakeFacultyRepository(
 class FakeScheduleRepository(
     private val items: List<ScheduleItem> = emptyList(),
 ) : ScheduleRepository {
+    var deleteAllSectionsCalled = false
+        private set
+
     override fun getAllSchedule(rollNo: String): Flow<List<ScheduleItem>> =
         MutableStateFlow(items)
     override fun getScheduleForDay(rollNo: String, day: String): Flow<List<ScheduleItem>> =
         MutableStateFlow(items.filter { it.subject.isNotEmpty() })
+    override suspend fun deleteAllSections() {
+        deleteAllSectionsCalled = true
+    }
 }
 
 class FakeSyncUseCase : SyncUseCase {

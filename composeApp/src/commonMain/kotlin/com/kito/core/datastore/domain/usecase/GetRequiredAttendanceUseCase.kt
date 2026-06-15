@@ -1,6 +1,6 @@
-package com.kito.feature.attendance.domain.usecase
+package com.kito.core.datastore.domain.usecase
 
-import com.kito.core.datastore.PrefsRepository
+import com.kito.core.datastore.domain.repository.PrefsRepository
 import kotlinx.coroutines.flow.Flow
 
 /**

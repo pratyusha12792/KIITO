@@ -1,13 +1,15 @@
-package com.kito.feature.attendance
+package com.kito.core.datastore
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import com.kito.core.datastore.PrefsRepository
-import com.kito.feature.attendance.domain.usecase.GetUserSyncPreferencesUseCase
+import com.kito.core.datastore.domain.repository.PrefsRepository
+import com.kito.core.datastore.data.PrefsRepositoryImpl
+import com.kito.core.datastore.domain.usecase.GetRequiredAttendanceUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -22,25 +24,25 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class GetUserSyncPreferencesUseCaseTest {
+class GetRequiredAttendanceUseCaseTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val tempPath = "sync_prefs_usecase_test.preferences_pb".toPath()
+    private val tempPath = "req_attendance_usecase_test.preferences_pb".toPath()
     private lateinit var prefsRepository: PrefsRepository
     private lateinit var datastoreScope: CoroutineScope
-    private lateinit var useCase: GetUserSyncPreferencesUseCase
+    private lateinit var useCase: GetRequiredAttendanceUseCase
 
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         datastoreScope = CoroutineScope(testDispatcher + SupervisorJob())
-        prefsRepository = PrefsRepository(
+        prefsRepository = PrefsRepositoryImpl(
             PreferenceDataStoreFactory.createWithPath(
                 scope = datastoreScope,
                 produceFile = { tempPath }
             )
         )
-        useCase = GetUserSyncPreferencesUseCase(prefsRepository)
+        useCase = GetRequiredAttendanceUseCase(prefsRepository)
     }
 
     @AfterTest
@@ -55,15 +57,16 @@ class GetUserSyncPreferencesUseCaseTest {
     }
 
     @Test
-    fun getUserSyncPreferences_returnsSavedValues() = runTest(testDispatcher) {
-        prefsRepository.setUserRollNumber("11223344")
-        prefsRepository.setAcademicYear("2026")
-        prefsRepository.setTermCode("011")
-        advanceUntilIdle()
+    fun getRequiredAttendance_defaultPercentage() = runTest(testDispatcher) {
+        val result = useCase().first()
+        assertEquals(75, result)
+    }
 
-        val config = useCase()
-        assertEquals("11223344", config.roll)
-        assertEquals("2026", config.year)
-        assertEquals("011", config.term)
+    @Test
+    fun getRequiredAttendance_customPercentage() = runTest(testDispatcher) {
+        prefsRepository.setRequiredAttendance(90)
+        advanceUntilIdle()
+        val result = useCase().first()
+        assertEquals(90, result)
     }
 }

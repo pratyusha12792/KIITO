@@ -1,7 +1,7 @@
-package com.kito.feature.attendance
+package com.kito.core.auth
 
 import com.kito.core.platform.SecureStorage
-import com.kito.feature.attendance.domain.usecase.SaveSapPasswordUseCase
+import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
