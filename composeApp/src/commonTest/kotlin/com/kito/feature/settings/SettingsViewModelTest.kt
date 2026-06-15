@@ -7,15 +7,12 @@ import com.kito.core.datastore.data.PrefsRepositoryImpl
 import com.kito.core.platform.SecureStorage
 import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.attendance.domain.model.Attendance
-import com.kito.core.auth.domain.usecase.ClearSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
 import com.kito.feature.schedule.notification.NotificationController
 import com.kito.feature.settings.presentation.SettingsViewModel
 import com.kito.feature.settings.presentation.SettingsEvent
 import com.kito.testing.FakeAttendanceRepository
 import com.kito.testing.FakeAuthRepository
+import com.kito.testing.FakeCredentialsRepository
 import com.kito.core.sync.domain.SyncUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,10 +46,7 @@ class SettingsViewModelTest {
     private lateinit var datastoreScope: CoroutineScope
 
     private lateinit var secureStorage: SecureStorage
-    private lateinit var getSapPasswordUseCase: GetSapPasswordUseCase
-    private lateinit var saveSapPasswordUseCase: SaveSapPasswordUseCase
-    private lateinit var clearSapPasswordUseCase: ClearSapPasswordUseCase
-    private lateinit var isSapLoggedInUseCase: IsSapLoggedInUseCase
+    private lateinit var fakeCredentials: FakeCredentialsRepository
     private lateinit var fakeAttendanceRepository: FakeAttendanceRepository
     private lateinit var spySyncUseCase: SpySyncUseCase
     private lateinit var fakeNotificationController: FakeNotificationController
@@ -110,10 +104,7 @@ class SettingsViewModelTest {
             )
         )
         secureStorage = SecureStorage()
-        getSapPasswordUseCase = GetSapPasswordUseCase(secureStorage)
-        saveSapPasswordUseCase = SaveSapPasswordUseCase(secureStorage)
-        clearSapPasswordUseCase = ClearSapPasswordUseCase(secureStorage)
-        isSapLoggedInUseCase = IsSapLoggedInUseCase(secureStorage)
+        fakeCredentials = FakeCredentialsRepository()
         fakeAttendanceRepository = FakeAttendanceRepository()
         spySyncUseCase = SpySyncUseCase()
         fakeNotificationController = FakeNotificationController()
@@ -133,10 +124,7 @@ class SettingsViewModelTest {
 
     private fun vm() = SettingsViewModel(
         prefs = prefsRepository,
-        getSapPasswordUseCase = getSapPasswordUseCase,
-        saveSapPasswordUseCase = saveSapPasswordUseCase,
-        clearSapPasswordUseCase = clearSapPasswordUseCase,
-        isSapLoggedInUseCase = isSapLoggedInUseCase,
+        credentialsRepository = fakeCredentials,
         attendanceRepository = fakeAttendanceRepository,
         appSyncUseCase = spySyncUseCase,
         notificationController = fakeNotificationController,
@@ -215,7 +203,7 @@ class SettingsViewModelTest {
     @Test
     fun changeRoll_clearsSapPassword_deletesAttendance_schedulesSync() = runTest(testDispatcher) {
         val v = vm()
-        secureStorage.saveSapPassword("old_pwd")
+        fakeCredentials.saveSapPassword("old_pwd")
         fakeAttendanceRepository.emit(
             listOf(
                 Attendance(
@@ -233,7 +221,7 @@ class SettingsViewModelTest {
         advanceUntilIdle()
 
         assertEquals("999999", prefsRepository.userRollFlow.first())
-        assertEquals("", secureStorage.getSapPassword())
+        assertEquals("", fakeCredentials.getSapPassword())
         assertTrue(fakeAttendanceRepository.observeAttendance().first().isEmpty())
         assertEquals("999999", spySyncUseCase.scheduleSyncRoll)
         assertIs<SyncUiState.Success>(v.syncState.value)
@@ -253,7 +241,7 @@ class SettingsViewModelTest {
     fun changeYearTerm_updatesPrefs_deletesAttendance_syncsAll() = runTest(testDispatcher) {
         val v = vm()
         prefsRepository.setUserRollNumber("123456")
-        secureStorage.saveSapPassword("pwd")
+        fakeCredentials.saveSapPassword("pwd")
         fakeAttendanceRepository.emit(
             listOf(
                 Attendance(
@@ -283,7 +271,7 @@ class SettingsViewModelTest {
     @Test
     fun logOut_clearsSapPassword_deletesAttendance() = runTest(testDispatcher) {
         val v = vm()
-        secureStorage.saveSapPassword("my_password")
+        fakeCredentials.saveSapPassword("my_password")
         fakeAttendanceRepository.emit(
             listOf(
                 Attendance(
@@ -300,7 +288,7 @@ class SettingsViewModelTest {
         v.onEvent(SettingsEvent.LogOut)
         advanceUntilIdle()
 
-        assertEquals("", secureStorage.getSapPassword())
+        assertEquals("", fakeCredentials.getSapPassword())
         assertTrue(fakeAttendanceRepository.observeAttendance().first().isEmpty())
         assertIs<SyncUiState.Success>(v.syncState.value)
     }
@@ -315,7 +303,7 @@ class SettingsViewModelTest {
         v.onEvent(SettingsEvent.LogIn("secret"))
         advanceUntilIdle()
 
-        assertEquals("secret", secureStorage.getSapPassword())
+        assertEquals("secret", fakeCredentials.getSapPassword())
         assertEquals("777777", spySyncUseCase.syncAllRoll)
         assertEquals("secret", spySyncUseCase.syncAllPassword)
         assertEquals("2025", spySyncUseCase.syncAllYear)
@@ -334,7 +322,7 @@ class SettingsViewModelTest {
         v.onEvent(SettingsEvent.LogIn("wrong"))
         advanceUntilIdle()
 
-        assertEquals("", secureStorage.getSapPassword())
+        assertEquals("", fakeCredentials.getSapPassword())
         assertIs<SyncUiState.Error>(v.syncState.value)
         assertEquals("invalid password", (v.syncState.value as SyncUiState.Error).message)
     }

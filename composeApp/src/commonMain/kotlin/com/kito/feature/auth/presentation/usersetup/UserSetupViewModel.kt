@@ -8,7 +8,7 @@ import com.kito.core.auth.AuthState
 import com.kito.core.common.util.currentLocalDateTime
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import com.kito.core.sync.domain.SyncUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
+import com.kito.core.auth.domain.repository.CredentialsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import org.koin.core.annotation.Provided
 
 class UserSetupViewModel(
     private val prefs: PrefsRepository,
-    private val saveSapPasswordUseCase: SaveSapPasswordUseCase,
+    private val credentialsRepository: CredentialsRepository,
     private val appSyncUseCase: SyncUseCase,
     @Provided private val authRepository: AuthRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -108,7 +108,7 @@ class UserSetupViewModel(
         prefs.setUserRollNumber(roll)
     }
     suspend fun setSapPassword(sapPassword: String){
-        saveSapPasswordUseCase(sapPassword)
+        credentialsRepository.saveSapPassword(sapPassword)
     }
     suspend fun setUserSetupDone() {
         prefs.setUserSetupDone()

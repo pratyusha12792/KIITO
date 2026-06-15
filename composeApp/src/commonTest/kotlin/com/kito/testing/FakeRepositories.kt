@@ -1,5 +1,6 @@
 package com.kito.testing
 
+import com.kito.core.auth.domain.repository.CredentialsRepository
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
 import com.kito.feature.exam.domain.model.ExamSchedule
@@ -112,4 +113,23 @@ class FakeAuthRepository : AuthRepository {
     override suspend fun signOut() = Unit
     override suspend fun updateDisplayName(name: String) = Unit
     override fun currentUser(): AuthUser? = null
+}
+
+class FakeCredentialsRepository(
+    initialLoggedIn: Boolean = false,
+    private var password: String = "",
+) : CredentialsRepository {
+    private val _isLoggedIn = MutableStateFlow(initialLoggedIn)
+    override val isLoggedIn: Flow<Boolean> = _isLoggedIn
+    override suspend fun getSapPassword(): String = password
+    override suspend fun saveSapPassword(p: String): Boolean {
+        password = p
+        _isLoggedIn.value = p.isNotEmpty()
+        return true
+    }
+    override suspend fun clearSapPassword(): Boolean {
+        password = ""
+        _isLoggedIn.value = false
+        return true
+    }
 }

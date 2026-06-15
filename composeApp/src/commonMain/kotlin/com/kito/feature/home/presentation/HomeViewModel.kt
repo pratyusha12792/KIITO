@@ -7,11 +7,9 @@ import com.kito.core.designsystem.StartupSyncGuard
 import com.kito.core.connectivity.domain.repository.ConnectivityRepository
 import com.kito.core.ui.state.SyncUiState
 import com.kito.core.sync.domain.SyncUseCase
+import com.kito.core.auth.domain.repository.CredentialsRepository
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
-import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
 import com.kito.feature.home.domain.model.EventOrAd
 import com.kito.feature.home.domain.repository.HomeRepository
 import com.kito.feature.schedule.domain.model.ScheduleItem
@@ -35,9 +33,7 @@ import org.koin.core.annotation.Provided
 
 class HomeViewModel(
     private val prefs: PrefsRepository,
-    private val isSapLoggedInUseCase: IsSapLoggedInUseCase,
-    private val getSapPasswordUseCase: GetSapPasswordUseCase,
-    private val saveSapPasswordUseCase: SaveSapPasswordUseCase,
+    private val credentialsRepository: CredentialsRepository,
     private val attendanceRepository: AttendanceRepository,
     private val scheduleRepository: ScheduleRepository,
     private val homeRepository: HomeRepository,
@@ -62,7 +58,7 @@ class HomeViewModel(
         fetchFeatureFlag()
     }
 
-    val sapLoggedIn = isSapLoggedInUseCase().stateIn(
+    val sapLoggedIn = credentialsRepository.isLoggedIn.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = false
@@ -141,7 +137,7 @@ class HomeViewModel(
             _syncEvents.emit(SyncUiState.Loading)
             _syncState.value = SyncUiState.Loading
             val roll = prefs.userRollFlow.first()
-            val sapPassword = getSapPasswordUseCase()
+            val sapPassword = credentialsRepository.getSapPassword()
             val year = prefs.academicYearFlow.first()
             val term = prefs.termCodeFlow.first()
 
@@ -231,7 +227,7 @@ class HomeViewModel(
 
             _loginState.value = result.fold(
                 onSuccess = {
-                    saveSapPasswordUseCase(password)
+                    credentialsRepository.saveSapPassword(password)
                     SyncUiState.Success
                 },
                 onFailure = {

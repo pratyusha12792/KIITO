@@ -11,9 +11,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.koin.core.annotation.Provided
 
-/**
- * Concrete implementation of PrefsRepository using AndroidX DataStore Preferences.
- */
 class PrefsRepositoryImpl(
     @Provided private val dataStore: DataStore<Preferences>
 ) : PrefsRepository {
