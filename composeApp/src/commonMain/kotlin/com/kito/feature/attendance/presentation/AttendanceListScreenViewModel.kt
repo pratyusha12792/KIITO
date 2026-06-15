@@ -3,7 +3,7 @@ package com.kito.feature.attendance.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kito.core.connectivity.domain.repository.ConnectivityRepository
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.model.AttendanceSummary

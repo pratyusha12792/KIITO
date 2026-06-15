@@ -51,7 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kito.core.designsystem.UIColors
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.presentation.components.AttendanceCard
 import com.kito.feature.attendance.presentation.components.AttendanceDialog

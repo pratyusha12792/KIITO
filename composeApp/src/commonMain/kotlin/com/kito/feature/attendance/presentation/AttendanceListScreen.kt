@@ -9,7 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import com.kito.core.platform.toast
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import org.koin.compose.koinInject

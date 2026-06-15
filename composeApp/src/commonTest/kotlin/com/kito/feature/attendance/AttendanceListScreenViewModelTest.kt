@@ -4,7 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.kito.core.datastore.PrefsRepository
 import com.kito.testing.FakeConnectivityRepository
 import com.kito.core.platform.SecureStorage
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.attendance.domain.usecase.GetAttendanceSummaryUseCase
 import com.kito.feature.attendance.domain.usecase.GetRequiredAttendanceUseCase
 import com.kito.feature.attendance.domain.usecase.GetUserSyncPreferencesUseCase

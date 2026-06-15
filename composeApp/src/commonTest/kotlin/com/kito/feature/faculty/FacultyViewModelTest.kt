@@ -1,7 +1,7 @@
 package com.kito.feature.faculty
 
 import com.kito.testing.FakeConnectivityRepository
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.faculty.domain.model.FacultyScheduleSlot
 import com.kito.feature.faculty.presentation.FacultyDetailViewModel
 import com.kito.feature.faculty.presentation.FacultyDetailEvent

@@ -4,7 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.kito.core.auth.AuthRepository
 import com.kito.core.datastore.PrefsRepository
 import com.kito.core.platform.SecureStorage
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.schedule.notification.NotificationController
 import com.kito.feature.settings.presentation.SettingsViewModel

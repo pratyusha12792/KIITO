@@ -6,7 +6,7 @@ import com.kito.core.datastore.PrefsRepository
 import com.kito.core.designsystem.StartupSyncGuard
 import com.kito.core.connectivity.domain.repository.ConnectivityRepository
 import com.kito.core.platform.SecureStorage
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.ui.state.SyncUiState
 import com.kito.core.sync.domain.SyncUseCase
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
