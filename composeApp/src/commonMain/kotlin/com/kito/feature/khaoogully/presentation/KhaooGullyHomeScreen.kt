@@ -1,23 +1,54 @@
 package com.kito.feature.khaoogully.presentation
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,10 +59,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -40,6 +71,10 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.kito.SetSystemBarAppearance
+import com.kito.core.designsystem.SharedExpandContainer
+import com.kito.core.presentation.navigation3.Routes
+import com.kito.feature.khaoogully.domain.model.KgCategory
+import com.kito.feature.khaoogully.domain.model.KgRestaurant
 import org.koin.compose.koinInject
 
 private val PrimaryGreen  = Color(0xFF2ECC71)
@@ -54,6 +89,7 @@ private val BrowseBadge   = Color(0xFFFFA726)
 //  Entry point — now accepts nav callback
 // ─────────────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun KhaooGullyHomeScreen(
     viewModel: KhaoogullyViewModel = koinInject(),
@@ -77,45 +113,48 @@ fun KhaooGullyHomeScreen(
             }
         }
     )
-    Box(modifier = Modifier.fillMaxSize()) {
-        FoodHomeContent(
-            state             = state,
-            onSearchChange    = viewModel::onSearchQueryChange,
-            onCategoryClick   = viewModel::onCategorySelected,
-            onRestaurantClick = onRestaurantClick,
-            onRetry           = viewModel::loadHomeData,
-            onLocationClick   = { showCampusMenu = true }
-        )
 
-        if (showCampusMenu) {
-            CampusSelectionDialog(
-                campuses       = state.availableCampuses,
-                selectedCampus = state.selectedCampus,
-                onCampusClick  = {
-                    viewModel.onCampusSelected(it)
-                    showCampusMenu = false
-                },
-                onDismiss      = { showCampusMenu = false }
-            )
-        }
+    SharedExpandContainer(
+        routeKey = Routes.Calendar,
+        backgroundColor = ScreenBg,
+    ) {
+        KhaooGullyHomeContent(
+            state = state,
+            showCampusMenu = showCampusMenu,
+            onShowCampusMenuChange = { showCampusMenu = it },
+            onSearchChange = viewModel::onSearchQueryChange,
+            onCategoryClick = viewModel::onCategorySelected,
+            onRestaurantClick = onRestaurantClick,
+            onRetry = viewModel::loadHomeData,
+            onCampusClick = { campus ->
+                viewModel.onCampusSelected(campus)
+                showCampusMenu = false
+            },
+            onLocationClick = { showCampusMenu = true }
+        )
     }
 }
 
 @Composable
-private fun FoodHomeContent(
+fun KhaooGullyHomeContent(
     state: FoodHomeUiState,
+    showCampusMenu: Boolean,
+    onShowCampusMenuChange: (Boolean) -> Unit,
     onSearchChange: (String) -> Unit,
     onCategoryClick: (KgCategory) -> Unit,
     onRestaurantClick: (KgRestaurant) -> Unit,
     onRetry: () -> Unit,
-    onLocationClick: () -> Unit
+    onCampusClick: (String?) -> Unit,
+    onLocationClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(ScreenBg)
+            .semantics { testTag = "khaoogully_content" }
     ) {
-        // ── Green top gradient (matches screenshot) ───────────────────────────
+        // ── Green top gradient ────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -123,8 +162,8 @@ private fun FoodHomeContent(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFFA8EDCA),  // mint green at top
-                            ScreenBg           // blends into page bg
+                            Color(0xFFA8EDCA),
+                            ScreenBg
                         )
                     )
                 )
@@ -142,6 +181,15 @@ private fun FoodHomeContent(
                 onLocationClick   = onLocationClick
             )
         }
+    }
+
+    if (showCampusMenu) {
+        CampusSelectionDialog(
+            campuses       = state.availableCampuses,
+            selectedCampus = state.selectedCampus,
+            onCampusClick  = onCampusClick,
+            onDismiss      = { onShowCampusMenuChange(false) }
+        )
     }
 }
 
@@ -202,7 +250,7 @@ private fun LocationHeader(selectedCampus: String?, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(selectedCampus ?: "All Campuses", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 Spacer(Modifier.width(4.dp))
-                Icon(Icons.Default.ArrowForward, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
             }
         }
     }
@@ -533,4 +581,59 @@ private fun CampusOptionRow(name: String, isSelected: Boolean, onClick: () -> Un
             modifier   = Modifier.weight(1f)
         )
     }
+}
+
+@Preview
+@Composable
+private fun KhaooGullyHomeContentPreview() {
+    val dummyCategories = listOf(
+        KgCategory("Pizza", null),
+        KgCategory("Burgers", null),
+        KgCategory("Drinks", null)
+    )
+    val dummyRestaurants = listOf(
+        KgRestaurant(
+            id = "1",
+            name = "Domino's Pizza",
+            image = null,
+            cuisine = listOf("Pizza", "Fast Food"),
+            rating = 4.2f,
+            campusName = "East Campus",
+            deliveryWindow = "20-30 mins",
+            poolId = null,
+            browseOnly = false
+        ),
+        KgRestaurant(
+            id = "2",
+            name = "Burger King",
+            image = null,
+            cuisine = listOf("Burgers", "Fast Food"),
+            rating = 4.0f,
+            campusName = "West Campus",
+            deliveryWindow = "15-25 mins",
+            poolId = null,
+            browseOnly = true
+        )
+    )
+    val dummyState = FoodHomeUiState(
+        isLoading = false,
+        error = null,
+        categories = dummyCategories,
+        restaurants = dummyRestaurants,
+        filteredRestaurants = dummyRestaurants,
+        searchQuery = "",
+        selectedCategory = null,
+        selectedCampus = null
+    )
+    KhaooGullyHomeContent(
+        state = dummyState,
+        showCampusMenu = false,
+        onShowCampusMenuChange = {},
+        onSearchChange = {},
+        onCategoryClick = {},
+        onRestaurantClick = {},
+        onRetry = {},
+        onCampusClick = {},
+        onLocationClick = {}
+    )
 }

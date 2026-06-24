@@ -2,12 +2,14 @@ package com.kito.feature.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-
-import com.kito.core.database.repository.AttendanceRepository
-import com.kito.core.datastore.PrefsRepository
-import com.kito.core.platform.SecureStorage
-import com.kito.core.presentation.components.AppSyncUseCase
-import com.kito.core.presentation.components.state.SyncUiState
+import com.kito.core.datastore.domain.repository.PrefsRepository
+import com.kito.core.ui.state.SyncUiState
+import com.kito.core.sync.domain.SyncUseCase
+import com.kito.feature.attendance.domain.repository.AttendanceRepository
+import com.kito.core.auth.domain.usecase.ClearSapPasswordUseCase
+import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
+import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
+import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
 import com.kito.feature.schedule.notification.NotificationController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,13 +20,20 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.koin.core.annotation.Provided
+import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsViewModel(
     private val prefs: PrefsRepository,
-    private val secureStorage: SecureStorage,
+    private val getSapPasswordUseCase: GetSapPasswordUseCase,
+    private val saveSapPasswordUseCase: SaveSapPasswordUseCase,
+    private val clearSapPasswordUseCase: ClearSapPasswordUseCase,
+    private val isSapLoggedInUseCase: IsSapLoggedInUseCase,
     private val attendanceRepository: AttendanceRepository,
-    private val appSyncUseCase: AppSyncUseCase,
-    private val notificationController: NotificationController
+    private val appSyncUseCase: SyncUseCase,
+    private val notificationController: NotificationController,
+    @Provided private val authRepository: com.kito.core.auth.AuthRepository,
+    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
 ): ViewModel(){
     private val _syncState = MutableStateFlow<SyncUiState>(SyncUiState.Idle)
     val syncState = _syncState.asStateFlow()
@@ -63,7 +72,7 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = 0
         )
-    val isLoggedIn = secureStorage.isLoggedInFlow
+    val isLoggedIn = isSapLoggedInUseCase()
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
@@ -79,25 +88,25 @@ class SettingsViewModel(
     private val _pendingNotificationEnable = MutableStateFlow(false)
     val pendingNotificationEnable = _pendingNotificationEnable.asStateFlow()
 
-    fun requestEnableNotifications() {
+    private fun requestEnableNotifications() {
         _pendingNotificationEnable.value = true
     }
 
-    fun clearPendingNotificationEnable() {
+    private fun clearPendingNotificationEnable() {
         _pendingNotificationEnable.value = false
     }
 
-    fun retryPendingNotificationEnable() {
+    private fun retryPendingNotificationEnable() {
         if (pendingNotificationEnable.value) {
             _pendingNotificationEnable.value = true
         }
     }
 
-    fun syncStateIdle(){
+    private fun syncStateIdle(){
         _syncState.value = SyncUiState.Idle
     }
-    fun changeName(name: String){
-        viewModelScope.launch {
+    private fun changeName(name: String){
+        viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
                 val formattedName = name
@@ -108,21 +117,22 @@ class SettingsViewModel(
                     .joinToString(" ") { word ->
                         word.replaceFirstChar { it.uppercaseChar() }
                     }
-                delay(1000)
+                delay(1000.milliseconds)
                 prefs.setUserName(formattedName)
+                authRepository.updateDisplayName(formattedName)
                 _syncState.value = SyncUiState.Success
             } catch (e: Exception) {
                 _syncState.value = SyncUiState.Error(e.message ?: "Sync failed")
             }
         }
     }
-    fun changeRoll(roll: String){
-        viewModelScope.launch {
+    private fun changeRoll(roll: String){
+        viewModelScope.launch(dispatcher) {
             val result = runCatching {
                 _syncState.value = SyncUiState.Loading
-                delay(1000)
+                delay(1000.milliseconds)
                 prefs.setUserRollNumber(roll)
-                secureStorage.clearSapPassword()
+                clearSapPasswordUseCase()
                 attendanceRepository.deleteAllAttendance()
                 appSyncUseCase.scheduleSync(
                     roll = roll
@@ -139,11 +149,11 @@ class SettingsViewModel(
         }
     }
 
-    fun changeAttendance(attendance: Int){
-        viewModelScope.launch {
+    private fun changeAttendance(attendance: Int){
+        viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
-                delay(1000)
+                delay(1000.milliseconds)
                 prefs.setRequiredAttendance(attendance)
                 _syncState.value = SyncUiState.Success
             }catch (e: Exception) {
@@ -151,17 +161,17 @@ class SettingsViewModel(
             }
         }
     }
-    fun changeYearTerm(year: String, term: String) {
-        viewModelScope.launch {
+    private fun changeYearTerm(year: String, term: String) {
+        viewModelScope.launch(dispatcher) {
             try {
                 _syncState.value = SyncUiState.Loading
-                delay(1000)
+                delay(1000.milliseconds)
                 prefs.setAcademicYear(year)
                 prefs.setTermCode(term)
                 attendanceRepository.deleteAllAttendance()
                 val result = appSyncUseCase.syncAll(
                     roll = prefs.userRollFlow.first(),
-                    sapPassword = secureStorage.getSapPassword(),
+                    sapPassword = getSapPasswordUseCase(),
                     year = year,
                     term = term
                 )
@@ -178,12 +188,12 @@ class SettingsViewModel(
             }
         }
     }
-    fun logOut(){
-        viewModelScope.launch {
+    private fun logOut(){
+        viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
-            delay(1000)
+            delay(1000.milliseconds)
             try {
-                secureStorage.clearSapPassword()
+                clearSapPasswordUseCase()
                 attendanceRepository.deleteAllAttendance()
                 _syncState.value = SyncUiState.Success
             } catch (e: Exception) {
@@ -191,10 +201,10 @@ class SettingsViewModel(
             }
         }
     }
-    fun logIn(password: String) {
-        viewModelScope.launch {
+    private fun logIn(password: String) {
+        viewModelScope.launch(dispatcher) {
             _syncState.value = SyncUiState.Loading
-            delay(1000)
+            delay(1000.milliseconds)
             val roll = prefs.userRollFlow.first()
             val year = prefs.academicYearFlow.first()
             val term = prefs.termCodeFlow.first()
@@ -208,7 +218,7 @@ class SettingsViewModel(
 
             _syncState.value = result.fold(
                 onSuccess = {
-                    secureStorage.saveSapPassword(password)
+                    saveSapPasswordUseCase(password)
                     SyncUiState.Success
                 },
                 onFailure = {
@@ -217,10 +227,26 @@ class SettingsViewModel(
             )
         }
     }
-    fun setNotificationState(state: Boolean){
-        viewModelScope.launch {
+    private fun setNotificationState(state: Boolean){
+        viewModelScope.launch(dispatcher) {
             prefs.setNotificationState(state)
             notificationController.sync()
+        }
+    }
+
+    fun onEvent(event: SettingsEvent) {
+        when (event) {
+            SettingsEvent.RequestEnableNotifications -> requestEnableNotifications()
+            SettingsEvent.ClearPendingNotificationEnable -> clearPendingNotificationEnable()
+            SettingsEvent.RetryPendingNotificationEnable -> retryPendingNotificationEnable()
+            SettingsEvent.SyncStateIdle -> syncStateIdle()
+            is SettingsEvent.ChangeName -> changeName(event.name)
+            is SettingsEvent.ChangeRoll -> changeRoll(event.roll)
+            is SettingsEvent.ChangeAttendance -> changeAttendance(event.attendance)
+            is SettingsEvent.ChangeYearTerm -> changeYearTerm(event.year, event.term)
+            SettingsEvent.LogOut -> logOut()
+            is SettingsEvent.LogIn -> logIn(event.password)
+            is SettingsEvent.SetNotificationState -> setNotificationState(event.state)
         }
     }
 }

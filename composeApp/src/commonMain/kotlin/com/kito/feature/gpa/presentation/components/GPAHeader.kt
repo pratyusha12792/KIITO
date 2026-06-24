@@ -37,8 +37,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.kito.core.presentation.components.meshGradient
-import com.kito.core.presentation.components.shimmer
+import com.kito.core.designsystem.meshGradient
+import com.kito.core.designsystem.shimmer
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -49,7 +49,8 @@ fun GPAHeader(
     selectedSemester: Int,
     selectedBranch: String,
     onSemesterSelected: (Int) -> Unit,
-    onBranchSelected: (String) -> Unit
+    onBranchSelected: (String) -> Unit,
+    enableAnimations: Boolean = true
 ) {
 
     var semesterExpanded by remember { mutableStateOf(false) }
@@ -74,6 +75,7 @@ fun GPAHeader(
     }
 
     LaunchedEffect(Unit) {
+        if (!enableAnimations) return@LaunchedEffect
         meshColorAnimators.forEachIndexed { i, anim ->
             launch {
                 val random = Random(i * 97)

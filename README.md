@@ -21,11 +21,11 @@ Kiito is built on a robust, scalable foundation designed for reliability and mai
 ### **Core Architecture: Clean Architecture + MVVM**
 The application strictly adheres to **Clean Architecture** principles, separating concerns into three distinct layers:
 *   **Presentation Layer**: Built with **Jetpack Compose** (Material 3), utilizing **MVVM (Model-View-ViewModel)** for reactive state management. UI events are decoupled from business logic, ensuring a responsive and crash-resistant interface.
-*   **Domain Layer**: Contains pure Kotlin business logic and use cases (e.g., `AppSyncUseCase`, `CalculateAttendanceUseCase`). This layer is platform-agnostic, paving the way for full Multiplatform (KMP) support.
+*   **Domain Layer**: Contains pure Kotlin business logic and use cases (e.g., `AppSyncUseCase`, `GetAttendanceSummaryUseCase`). This layer is platform-agnostic and shared across all targets via Kotlin Multiplatform.
 *   **Data Layer**: Manages data sources through the **Repository Pattern**. It arbitrates between the local database (Room), **DataStore Preferences** (Key-Value storage), and network data sources.
 
-### **Kotlin Multiplatform (KMP) Readiness**
-The project is structured for **Kotlin Multiplatform**, separating code into `commonMain` (business logic) and `androidMain` (platform-specific implementations). This forward-looking design ensures that the core logic can be shared across iOS and Desktop targets in the future.
+### **Kotlin Multiplatform (KMP)**
+The project is built on **Kotlin Multiplatform**, with the core business logic shared across **Android**, **iOS**, and **Desktop** targets from a single `commonMain` source set. Platform-specific code (notifications, secure storage, connectivity) is isolated via `expect/actual` declarations.
 
 ---
 
@@ -41,7 +41,7 @@ Instead of relying on unstable APIs, Kiito implements a custom **Secure Direct-L
 Kiito treats the local device as the source of truth.
 *   **Room Database**: Complex relational data (Students, Sections, Attendance) is stored in a normalized SQL database using **Room**. This allows for complex queries, such as "attendance trends over time" or "subjects with low attendance," to be executed instantly without network calls.
 *   **Proto DataStore**: User preferences and session configurations are strictly typed and stored using **Protocol Buffers**, ensuring type safety and modifying settings without UI jank.
-*   **DataStore Preferences**: Utilized for lightweight key-value storage of application state, flags, and simple user settings, replacing the legacy SharedPreferences with a modern, asynchronous solution.
+*   **DataStore Preferences**: Utilized for lightweight key-value storage of application state, flags, and simple user settings. Also serves as the encrypted storage backend on Android — credentials are encrypted with **Google Tink (AES-256-GCM)** before being written, with the master key protected by the **Android Keystore**. `EncryptedSharedPreferences` has been deprecated and removed in favour of this approach. On iOS, sensitive values are stored in the **Apple Keychain**.
 
 ### 3. **Intelligent Background Synchronization**
 *   **WorkManager Integration**: The app employs Android's **WorkManager** exclusively for reliable, deferrable background tasks such as widget updates.
@@ -79,23 +79,38 @@ Kiito goes beyond attendance to manage your entire academic life:
 | **Language** | Kotlin 2.3+ |
 | **UI Toolkit** | Jetpack Compose, Material 3 |
 | **Architecture** | Clean Architecture, MVVM |
-| **Dependency Injection** | Hilt (Dagger) |
+| **Multiplatform** | Kotlin Multiplatform (Android, iOS, Desktop) |
+| **Dependency Injection** | Koin 4 (compile-time safety plugin) |
 | **Asynchronous** | Kotlin Coroutines, Flow |
-| **Networking** | OkHttp, Retrofit (Supabase/Rest) |
-| **Persistence** | Room (SQLite), Proto DataStore |
+| **Networking** | Ktor Client |
+| **Persistence** | Room (SQLite), Proto DataStore, DataStore Preferences |
 | **Background Jobs** | WorkManager |
-| **Security** | Android Keystore, EncryptedSharedPreferences |
+| **Security (Android)** | Google Tink (AES-256-GCM) + Android Keystore + DataStore Preferences |
+| **Security (iOS)** | Apple Keychain |
+| **Testing** | kotlin.test, kotlinx-coroutines-test, Turbine |
 | **Tools** | Gradle (Kotlin DSL), Version Catalog |
 
 ---
 
 ## ⚙️ Setup & Build Instructions
 
-This project uses the Gradle build system and is configured for Android Studio Koala or newer.
+This project uses the Gradle build system and is configured for Android Studio Meerkat or newer.
 
 ### Prerequisites
-*   Android Studio Koala+
+*   Android Studio Meerkat+
 *   JDK 17
+*   Kotlin 2.3+
+
+---
+
+### 🔑 Required Secrets Configuration
+
+The build system reads all sensitive credentials from **`local.properties`** (Android) and **`Secrets.xcconfig`** (iOS). These files are **gitignored** and must be created manually on every development machine.
+
+- **Android** — create `local.properties` in the project root and add the required secret keys. Android Studio will auto-populate `sdk.dir`; the remaining keys must be filled in manually.
+- **iOS** — copy `iosApp/Configuration/Secrets.xcconfig.template` to `iosApp/Configuration/Secrets.xcconfig` and fill in your values.
+
+
 
 ### Building the Project
 
@@ -105,17 +120,18 @@ This project uses the Gradle build system and is configured for Android Studio K
     cd kito
     ```
 
-2.  **Configure Local Properties**:
-    Create a `local.properties` file in the root directory if it doesn't exist (usually auto-generated by Android Studio).
+2.  **Configure secrets** as described above — create `local.properties` in the root and copy `Secrets.xcconfig.template` → `Secrets.xcconfig` for iOS.
 
-3.  **Build the APK**:
+3.  **Build the Android APK**:
     ```bash
     ./gradlew assembleDebug
     ```
 
-4.  **Run Tests**:
+4.  **Open iOS project** in Xcode (`iosApp/iosApp.xcworkspace`) and run on simulator or device.
+
+5.  **Run Tests**:
     ```bash
-    ./gradlew testDebugUnitTest
+    ./gradlew :composeApp:desktopTest
     ```
 
 ---
@@ -125,8 +141,20 @@ This project uses the Gradle build system and is configured for Android Studio K
 Kiito is engineered with a **"Trust No One"** architecture.
 
 *   **No Commercial Tracking**: We do not use Google Analytics, Firebase Analytics, or any third-party behavioral trackers.
-*   **Ephemeral Credentials**: Your password is never written to disk. It is used solely for the active session authentication handshake.
+*   **Ephemeral Credentials**: Your password is never written to disk in plaintext. It is encrypted before storage and the encryption key never leaves the secure hardware.
 *   **Sandboxed Storage**: All local data is stored in the app's private sandbox, inaccessible to other applications without root access.
+
+### Credential Security
+
+**Android — AES-256-GCM + Android Keystore**
+
+Sensitive values (SAP password) are encrypted using **AES-256-GCM** via [Google Tink](https://github.com/google/tink) before being written to DataStore Preferences. The encryption key itself is stored inside the **Android Keystore** — a hardware-backed secure enclave that never exposes the raw key material to application code. Even if the DataStore file is extracted from the device, the ciphertext is unreadable without the Keystore-bound key.
+
+AES-256-GCM provides both **confidentiality** (256-bit key, computationally infeasible to brute-force) and **integrity** (the GCM authentication tag detects any tampering with the ciphertext). `EncryptedSharedPreferences` was deprecated and has been removed — this approach supersedes it.
+
+**iOS — Apple Keychain (Security framework)**
+
+On iOS, sensitive values are stored directly in the **Apple Keychain** using the native Security framework (`SecItemAdd` / `SecItemCopyMatching`, `kSecClassGenericPassword`). The Keychain is encrypted by the OS using the device passcode and, on devices with a Secure Enclave, keys are hardware-bound. Data is automatically wiped if the device is restored, and is inaccessible to other apps by default due to iOS sandbox enforcement.
 
 
 ## 📄 License & Legal
@@ -145,3 +173,9 @@ The software is provided "AS IS", without warranty of any kind.
 ---
 
 > **Disclaimer**: Kiito is an official application affiliated with ELABS and the School of Electronics.
+
+---
+
+## 🤝 Contributing
+
+Read **[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)** before opening a PR. It covers the architecture rules, testing requirements, branch conventions, and the PR checklist.

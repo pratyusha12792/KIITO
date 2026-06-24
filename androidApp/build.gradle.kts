@@ -6,6 +6,8 @@ plugins {
 
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.koin.compiler)
+    alias(libs.plugins.kover)
 }
 
 val localProps = Properties().apply {
@@ -24,7 +26,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 43
-        versionName = "4.5.1"
+        versionName = "5.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -62,6 +64,11 @@ android {
             "String",
             "CDN_URL",
             "\"${localProps.getProperty("CDN_URL")}\""
+        )
+        buildConfigField(
+            "String",
+            "GOOGLE_SERVER_CLIENT_ID",
+            "\"${localProps.getProperty("GOOGLE_SERVER_CLIENT_ID")}\""
         )
     }
 
@@ -145,6 +152,17 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.composeUiTooling)
+}
+
+kover {
+    reports {
+        verify {
+            // Baseline 0% — ratcheted up as Track D lands (per doc 05 §6)
+            rule("Line coverage baseline") {
+                minBound(0)
+            }
+        }
+    }
 }
 
 kotlin {
