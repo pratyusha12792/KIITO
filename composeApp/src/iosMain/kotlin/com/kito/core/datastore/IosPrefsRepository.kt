@@ -7,8 +7,10 @@ import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+import org.koin.core.annotation.Provided
+
 class IosPrefsRepository(
-    private val dataStore: DataStore<Preferences>
+    @Provided private val dataStore: DataStore<Preferences>
 ) {
     companion object {
         private val KEY_IOS_IS_LOGGED_IN = booleanPreferencesKey("ios_is_logged_in")
