@@ -23,12 +23,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.Provided
+import com.kito.core.sync.domain.usecase.ChangeYearTermUseCase
 
 class AttendanceListScreenViewModel(
     private val getAttendanceSummary: GetAttendanceSummaryUseCase,
     private val prefs: PrefsRepository,
     private val credentialsRepository: CredentialsRepository,
     private val appSyncUseCase: SyncUseCase,
+    private val changeYearTermUseCase: ChangeYearTermUseCase,
     @Provided private val connectivityRepository: ConnectivityRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ): ViewModel(){
@@ -112,6 +114,15 @@ class AttendanceListScreenViewModel(
         summary.map { it.lowestPercentage }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
+    private val year = prefs.academicYearFlow
+    private val term = prefs.termCodeFlow.map { code ->
+        when (code) {
+            "010" -> "Autumn"
+            "020" -> "Spring"
+            else -> "Unknown"
+        }
+    }
+
     val uiState: StateFlow<AttendanceListUiState> = combine(
         isOnline,
         _syncState,
@@ -121,7 +132,9 @@ class AttendanceListScreenViewModel(
         _loginState,
         averageAttendancePercentage,
         highestAttendancePercentage,
-        lowestAttendancePercentage
+        lowestAttendancePercentage,
+        year,
+        term
     ) { array ->
         AttendanceListUiState(
             isOnline = array[0] as Boolean,
@@ -132,13 +145,35 @@ class AttendanceListScreenViewModel(
             loginState = array[5] as SyncUiState,
             averageAttendancePercentage = array[6] as Double,
             highestAttendancePercentage = array[7] as Double,
-            lowestAttendancePercentage = array[8] as Double
+            lowestAttendancePercentage = array[8] as Double,
+            year = array[9] as String,
+            term = array[10] as String
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = AttendanceListUiState()
     )
+
+    fun changeYearTerm(year: String, term: String) {
+        viewModelScope.launch(dispatcher) {
+            try {
+                _syncState.value = SyncUiState.Loading
+                val result = changeYearTermUseCase(year, term)
+                _syncState.value = result.fold(
+                    onSuccess = {
+                        _syncEvents.emit(SyncUiState.Success)
+                        SyncUiState.Success
+                    },
+                    onFailure = {
+                        SyncUiState.Error(it.message ?: "Sync failed")
+                    }
+                )
+            } catch (e: Exception) {
+                _syncState.value = SyncUiState.Error(e.message ?: "Sync failed")
+            }
+        }
+    }
 
     fun login(
         password: String

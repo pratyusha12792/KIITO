@@ -13,4 +13,6 @@ data class AttendanceListUiState(
     val averageAttendancePercentage: Double = 0.0,
     val highestAttendancePercentage: Double = 0.0,
     val lowestAttendancePercentage: Double = 0.0,
+    val year: String = "",
+    val term: String = "",
 )

@@ -62,6 +62,14 @@ fun AttendanceListScreen(
                 is AttendanceListEvent.ClearSyncState -> {
                     viewModel.setSyncStateIdle()
                 }
+
+                is AttendanceListEvent.ChangeYearTerm -> {
+                    if (uiState.isOnline) {
+                        viewModel.changeYearTerm(event.year, event.term)
+                    } else {
+                        toast("No Internet Connection")
+                    }
+                }
             }
         }
     )

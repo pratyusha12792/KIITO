@@ -22,7 +22,7 @@ class PrefsRepositoryImpl(
         private val KEY_USER_NAME = stringPreferencesKey("user_name")
         private val KEY_USER_ROLLNUMBER = stringPreferencesKey("User_Password")
         private val KEY_REQUIRED_ATTENDANCE = intPreferencesKey("required_attendance")
-        private val KEY_RESET_FIX = booleanPreferencesKey("reset_fix")
+        private val KEY_RESET_FIX_V3 = booleanPreferencesKey("reset_fix_V3")
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val KEY_FRIEND_ROLLS = stringPreferencesKey("friend_rolls")
         private val KEY_SELECTED_FRIEND_ROLL = stringPreferencesKey("selected_friend_roll")
@@ -32,7 +32,7 @@ class PrefsRepositoryImpl(
         .map { it[KEY_NOTIFICATIONS_ENABLED] ?: false }
 
     override val resetFixFlow: Flow<Boolean> = dataStore.data
-        .map { it[KEY_RESET_FIX] ?: false }
+        .map { it[KEY_RESET_FIX_V3] ?: false }
 
     override val requiredAttendanceFlow: Flow<Int> = dataStore.data
         .map { it[KEY_REQUIRED_ATTENDANCE] ?: 75 }
@@ -102,7 +102,7 @@ class PrefsRepositoryImpl(
 
     override suspend fun setResetDone() {
         dataStore.edit {
-            it[KEY_RESET_FIX] = true
+            it[KEY_RESET_FIX_V3] = true
         }
     }
 

@@ -9,6 +9,7 @@ import com.kito.core.platform.AppSyncTrigger
 import com.kito.core.platform.ConnectivityObserver
 import com.kito.core.platform.SecureStorage
 import com.kito.feature.schedule.notification.NotificationController
+import com.kito.core.database.MIGRATION_1_2
 import okio.Path.Companion.toOkioPath
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -23,12 +24,14 @@ val desktopModule = module {
     single {
         Room.databaseBuilder<AppDB>(name = File(System.getProperty("user.home"), ".kito/kito_desktop.db").also { it.parentFile?.mkdirs() }.absolutePath)
             .setDriver(BundledSQLiteDriver())
+            .addMigrations(MIGRATION_1_2)
             .build()
     }
     single { get<AppDB>().attendanceDao() }
     single { get<AppDB>().studentDao() }
     single { get<AppDB>().sectionDao() }
     single { get<AppDB>().studentSectionDao() }
+    single { get<AppDB>().activeSessionDao() }
     single<io.ktor.client.HttpClient> { createSupabaseClient() }
     single { ConnectivityObserver() }
     single { SecureStorage() }

@@ -128,6 +128,12 @@ class SettingsViewModelTest {
         attendanceRepository = fakeAttendanceRepository,
         appSyncUseCase = spySyncUseCase,
         notificationController = fakeNotificationController,
+        changeYearTermUseCase = com.kito.core.sync.domain.usecase.ChangeYearTermUseCase(
+            prefs = prefsRepository,
+            credentialsRepository = fakeCredentials,
+            attendanceRepository = fakeAttendanceRepository,
+            syncUseCase = spySyncUseCase
+        ),
         authRepository = spyAuthRepository,
         dispatcher = testDispatcher,
     )

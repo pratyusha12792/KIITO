@@ -24,6 +24,10 @@ interface StudentSectionDAO {
         JOIN StudentEntity stu
             ON sec.section = stu.section
            AND sec.batch = stu.batch
+        JOIN ActiveSessionEntity act
+            ON sec.academic_year = act.academic_year
+           AND sec.term_code = act.term_code
+           AND sec.version = act.version
         WHERE stu.roll_no = :rollNo
           AND sec.day = :day
         ORDER BY sec.start_time
@@ -48,6 +52,10 @@ interface StudentSectionDAO {
         JOIN StudentEntity stu
             ON sec.section = stu.section
            AND sec.batch = stu.batch
+        JOIN ActiveSessionEntity act
+            ON sec.academic_year = act.academic_year
+           AND sec.term_code = act.term_code
+           AND sec.version = act.version
         WHERE stu.roll_no = :rollNo
         ORDER BY sec.start_time
     """)

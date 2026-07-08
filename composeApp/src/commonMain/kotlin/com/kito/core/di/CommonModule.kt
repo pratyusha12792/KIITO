@@ -16,6 +16,7 @@ import com.kito.core.connectivity.domain.repository.ConnectivityRepository
 import com.kito.core.sync.data.SyncRemoteDataSource
 import com.kito.core.sync.domain.AppSyncUseCase
 import com.kito.core.sync.domain.SyncUseCase
+import com.kito.core.sync.domain.usecase.ChangeYearTermUseCase
 import com.kito.feature.app.presentation.AppViewModel
 import com.kito.sap.SapPortalClient
 import com.kito.sap.SapRepository
@@ -41,6 +42,7 @@ val commonModule = module {
     single<PrefsRepositoryImpl>() bind PrefsRepository::class
     single<StartupSyncGuard>()
     single<AppSyncUseCase>() bind SyncUseCase::class
+    single<ChangeYearTermUseCase>()
     single<ConnectivityRepository> { ConnectivityRepositoryImpl(get()) }
     single<CredentialsRepositoryImpl>() bind CredentialsRepository::class
 
