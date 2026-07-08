@@ -5,13 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.kito.core.connectivity.domain.repository.ConnectivityRepository
 import com.kito.core.ui.state.SyncUiState
 import com.kito.core.sync.domain.SyncUseCase
+import com.kito.core.auth.domain.repository.CredentialsRepository
 import com.kito.feature.attendance.domain.model.Attendance
 import com.kito.feature.attendance.domain.model.AttendanceSummary
 import com.kito.feature.attendance.domain.usecase.GetAttendanceSummaryUseCase
-import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
-import com.kito.core.datastore.domain.usecase.GetRequiredAttendanceUseCase
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -29,11 +26,8 @@ import org.koin.core.annotation.Provided
 
 class AttendanceListScreenViewModel(
     private val getAttendanceSummary: GetAttendanceSummaryUseCase,
-    private val getRequiredAttendance: GetRequiredAttendanceUseCase,
     private val prefs: PrefsRepository,
-    private val getSapPassword: GetSapPasswordUseCase,
-    private val isSapLoggedIn: IsSapLoggedInUseCase,
-    private val saveSapPassword: SaveSapPasswordUseCase,
+    private val credentialsRepository: CredentialsRepository,
     private val appSyncUseCase: SyncUseCase,
     @Provided private val connectivityRepository: ConnectivityRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -50,7 +44,7 @@ class AttendanceListScreenViewModel(
             _syncState.value = SyncUiState.Loading
 
             val roll = prefs.userRollFlow.first()
-            val sapPassword = getSapPassword()
+            val sapPassword = credentialsRepository.getSapPassword()
             val year = prefs.academicYearFlow.first()
             val term = prefs.termCodeFlow.first()
 
@@ -77,7 +71,7 @@ class AttendanceListScreenViewModel(
         _syncState.value = SyncUiState.Idle
     }
 
-    private val sapLoggedIn = isSapLoggedIn()
+    private val sapLoggedIn = credentialsRepository.isLoggedIn
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -99,7 +93,7 @@ class AttendanceListScreenViewModel(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
-    private val requiredAttendance = getRequiredAttendance()
+    private val requiredAttendance = prefs.requiredAttendanceFlow
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -164,7 +158,7 @@ class AttendanceListScreenViewModel(
 
             _loginState.value = result.fold(
                 onSuccess = {
-                    saveSapPassword(password)
+                    credentialsRepository.saveSapPassword(password)
                     SyncUiState.Success
                 },
                 onFailure = {

@@ -4,13 +4,9 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import com.kito.core.datastore.data.PrefsRepositoryImpl
 import com.kito.testing.FakeConnectivityRepository
-import com.kito.core.platform.SecureStorage
+import com.kito.testing.FakeCredentialsRepository
 import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.attendance.domain.usecase.GetAttendanceSummaryUseCase
-import com.kito.core.datastore.domain.usecase.GetRequiredAttendanceUseCase
-import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
 import com.kito.feature.attendance.presentation.AttendanceListScreenViewModel
 import com.kito.testing.FakeAttendanceRepository
 import com.kito.core.sync.domain.SyncUseCase
@@ -20,7 +16,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -47,7 +42,7 @@ class AttendanceListScreenViewModelTest {
     private lateinit var datastoreScope: CoroutineScope
 
     private lateinit var repo: FakeAttendanceRepository
-    private lateinit var secureStorage: SecureStorage
+    private lateinit var fakeCredentials: FakeCredentialsRepository
     private lateinit var spySyncUseCase: SpySyncUseCase
     private lateinit var vm: AttendanceListScreenViewModel
 
@@ -85,15 +80,12 @@ class AttendanceListScreenViewModelTest {
             )
         )
         repo = FakeAttendanceRepository()
-        secureStorage = SecureStorage()
+        fakeCredentials = FakeCredentialsRepository()
         spySyncUseCase = SpySyncUseCase()
         vm = AttendanceListScreenViewModel(
             getAttendanceSummary = GetAttendanceSummaryUseCase(repo),
-            getRequiredAttendance = GetRequiredAttendanceUseCase(prefsRepository),
             prefs = prefsRepository,
-            getSapPassword = GetSapPasswordUseCase(secureStorage),
-            isSapLoggedIn = IsSapLoggedInUseCase(secureStorage),
-            saveSapPassword = SaveSapPasswordUseCase(secureStorage),
+            credentialsRepository = fakeCredentials,
             appSyncUseCase = spySyncUseCase,
             connectivityRepository = FakeConnectivityRepository(),
             dispatcher = testDispatcher,
@@ -165,7 +157,7 @@ class AttendanceListScreenViewModelTest {
         prefsRepository.setUserRollNumber("123456")
         prefsRepository.setAcademicYear("2026")
         prefsRepository.setTermCode("010")
-        secureStorage.saveSapPassword("pwd")
+        fakeCredentials.saveSapPassword("pwd")
 
         val events = mutableListOf<SyncUiState>()
         val jobEvents = launch { vm.syncEvents.collect { events.add(it) } }
@@ -227,7 +219,7 @@ class AttendanceListScreenViewModelTest {
 
         assertEquals("123456", spySyncUseCase.syncAllRoll)
         assertEquals("new_password", spySyncUseCase.syncAllPassword)
-        assertEquals("new_password", secureStorage.getSapPassword())
+        assertEquals("new_password", fakeCredentials.getSapPassword())
         assertIs<SyncUiState.Success>(vm.uiState.value.loginState)
         job.cancel()
     }
@@ -240,7 +232,7 @@ class AttendanceListScreenViewModelTest {
         vm.login("new_password")
         advanceUntilIdle()
 
-        assertEquals("", secureStorage.getSapPassword())
+        assertEquals("", fakeCredentials.getSapPassword())
         assertIs<SyncUiState.Error>(vm.uiState.value.loginState)
         assertEquals("auth failed", (vm.uiState.value.loginState as SyncUiState.Error).message)
         job.cancel()

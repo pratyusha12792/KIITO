@@ -4,15 +4,11 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import com.kito.core.datastore.data.PrefsRepositoryImpl
 import com.kito.core.designsystem.StartupSyncGuard
-import com.kito.core.platform.ConnectivityObserver
-import com.kito.core.platform.SecureStorage
-import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
-import com.kito.feature.home.presentation.HomeViewModel
 import com.kito.feature.home.presentation.HomeEvent
+import com.kito.feature.home.presentation.HomeViewModel
 import com.kito.testing.FakeAttendanceRepository
 import com.kito.testing.FakeConnectivityRepository
+import com.kito.testing.FakeCredentialsRepository
 import com.kito.testing.FakeHomeRepository
 import com.kito.testing.FakeScheduleRepository
 import com.kito.testing.FakeSyncUseCase
@@ -46,10 +42,6 @@ class HomeViewModelTest {
     private lateinit var prefsRepository: PrefsRepository
     private lateinit var datastoreScope: CoroutineScope
 
-    private lateinit var isSapLoggedInUseCase: IsSapLoggedInUseCase
-    private lateinit var getSapPasswordUseCase: GetSapPasswordUseCase
-    private lateinit var saveSapPasswordUseCase: SaveSapPasswordUseCase
-
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
@@ -60,10 +52,6 @@ class HomeViewModelTest {
                 produceFile = { tempPath }
             )
         )
-        val secureStorage = SecureStorage()
-        isSapLoggedInUseCase = IsSapLoggedInUseCase(secureStorage)
-        getSapPasswordUseCase = GetSapPasswordUseCase(secureStorage)
-        saveSapPasswordUseCase = SaveSapPasswordUseCase(secureStorage)
     }
 
     @AfterTest
@@ -79,9 +67,7 @@ class HomeViewModelTest {
 
     private fun vm(homeRepo: FakeHomeRepository = FakeHomeRepository()) = HomeViewModel(
         prefs = prefsRepository,
-        isSapLoggedInUseCase = isSapLoggedInUseCase,
-        getSapPasswordUseCase = getSapPasswordUseCase,
-        saveSapPasswordUseCase = saveSapPasswordUseCase,
+        credentialsRepository = FakeCredentialsRepository(),
         attendanceRepository = FakeAttendanceRepository(),
         scheduleRepository = FakeScheduleRepository(),
         homeRepository = homeRepo,

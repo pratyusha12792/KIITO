@@ -5,11 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import com.kito.core.ui.state.SyncUiState
 import com.kito.core.sync.domain.SyncUseCase
+import com.kito.core.auth.domain.repository.CredentialsRepository
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
-import com.kito.core.auth.domain.usecase.ClearSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.GetSapPasswordUseCase
-import com.kito.core.auth.domain.usecase.IsSapLoggedInUseCase
-import com.kito.core.auth.domain.usecase.SaveSapPasswordUseCase
 import com.kito.feature.schedule.notification.NotificationController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,10 +22,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsViewModel(
     private val prefs: PrefsRepository,
-    private val getSapPasswordUseCase: GetSapPasswordUseCase,
-    private val saveSapPasswordUseCase: SaveSapPasswordUseCase,
-    private val clearSapPasswordUseCase: ClearSapPasswordUseCase,
-    private val isSapLoggedInUseCase: IsSapLoggedInUseCase,
+    private val credentialsRepository: CredentialsRepository,
     private val attendanceRepository: AttendanceRepository,
     private val appSyncUseCase: SyncUseCase,
     private val notificationController: NotificationController,
@@ -72,7 +66,7 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = 0
         )
-    val isLoggedIn = isSapLoggedInUseCase()
+    val isLoggedIn = credentialsRepository.isLoggedIn
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
@@ -132,7 +126,7 @@ class SettingsViewModel(
                 _syncState.value = SyncUiState.Loading
                 delay(1000.milliseconds)
                 prefs.setUserRollNumber(roll)
-                clearSapPasswordUseCase()
+                credentialsRepository.clearSapPassword()
                 attendanceRepository.deleteAllAttendance()
                 appSyncUseCase.scheduleSync(
                     roll = roll
@@ -171,7 +165,7 @@ class SettingsViewModel(
                 attendanceRepository.deleteAllAttendance()
                 val result = appSyncUseCase.syncAll(
                     roll = prefs.userRollFlow.first(),
-                    sapPassword = getSapPasswordUseCase(),
+                    sapPassword = credentialsRepository.getSapPassword(),
                     year = year,
                     term = term
                 )
@@ -193,7 +187,7 @@ class SettingsViewModel(
             _syncState.value = SyncUiState.Loading
             delay(1000.milliseconds)
             try {
-                clearSapPasswordUseCase()
+                credentialsRepository.clearSapPassword()
                 attendanceRepository.deleteAllAttendance()
                 _syncState.value = SyncUiState.Success
             } catch (e: Exception) {
@@ -218,7 +212,7 @@ class SettingsViewModel(
 
             _syncState.value = result.fold(
                 onSuccess = {
-                    saveSapPasswordUseCase(password)
+                    credentialsRepository.saveSapPassword(password)
                     SyncUiState.Success
                 },
                 onFailure = {
