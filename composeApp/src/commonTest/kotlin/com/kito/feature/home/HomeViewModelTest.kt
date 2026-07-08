@@ -4,6 +4,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import com.kito.core.datastore.data.PrefsRepositoryImpl
 import com.kito.core.designsystem.StartupSyncGuard
+import com.kito.feature.home.presentation.HomeEvent
+import com.kito.feature.home.presentation.HomeViewModel
 import com.kito.testing.FakeAttendanceRepository
 import com.kito.testing.FakeConnectivityRepository
 import com.kito.testing.FakeCredentialsRepository
