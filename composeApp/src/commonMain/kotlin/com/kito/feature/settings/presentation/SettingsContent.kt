@@ -83,7 +83,7 @@ import com.kito.feature.settings.presentation.components.PrivacyPolicyDialog
 import com.kito.feature.settings.presentation.components.RequiredAttendanceDialogBox
 import com.kito.feature.settings.presentation.components.RollChangeDialogBox
 import com.kito.feature.settings.presentation.components.TermsOfServiceDialog
-import com.kito.feature.settings.presentation.components.YearTermChangeDialogBox
+import com.kito.core.designsystem.YearTermChangeDialogBox
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.hazeEffect

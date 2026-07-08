@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import com.kito.core.ui.state.SyncUiState
 import com.kito.core.sync.domain.SyncUseCase
+import com.kito.core.sync.domain.usecase.ChangeYearTermUseCase
 import com.kito.core.auth.domain.repository.CredentialsRepository
 import com.kito.feature.attendance.domain.repository.AttendanceRepository
 import com.kito.feature.schedule.notification.NotificationController
@@ -26,6 +27,7 @@ class SettingsViewModel(
     private val attendanceRepository: AttendanceRepository,
     private val appSyncUseCase: SyncUseCase,
     private val notificationController: NotificationController,
+    private val changeYearTermUseCase: ChangeYearTermUseCase,
     @Provided private val authRepository: com.kito.core.auth.AuthRepository,
     private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
 ): ViewModel(){
@@ -160,15 +162,7 @@ class SettingsViewModel(
             try {
                 _syncState.value = SyncUiState.Loading
                 delay(1000.milliseconds)
-                prefs.setAcademicYear(year)
-                prefs.setTermCode(term)
-                attendanceRepository.deleteAllAttendance()
-                val result = appSyncUseCase.syncAll(
-                    roll = prefs.userRollFlow.first(),
-                    sapPassword = credentialsRepository.getSapPassword(),
-                    year = year,
-                    term = term
-                )
+                val result = changeYearTermUseCase(year, term)
                 _syncState.value = result.fold(
                     onSuccess = {
                         SyncUiState.Success

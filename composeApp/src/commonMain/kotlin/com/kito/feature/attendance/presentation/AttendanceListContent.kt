@@ -68,6 +68,7 @@ import com.kito.feature.attendance.presentation.components.InstagramPullIndicato
 import com.kito.feature.attendance.presentation.components.OverallAttendanceCard
 import com.kito.feature.attendance.presentation.components.sampleAttendanceEntities
 import com.kito.feature.settings.presentation.components.LoginDialogBox
+import com.kito.core.designsystem.YearTermChangeDialogBox
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.hazeEffect
@@ -95,12 +96,19 @@ fun AttendanceListContent(
     val haptic = LocalHapticFeedback.current
     val pullOffsetPx = with(density) { (42.dp * fraction).toPx() }
     var isLoginDialogOpen by remember { mutableStateOf(false) }
+    var isYearTermDialogOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.loginState) {
         if (state.loginState is SyncUiState.Success) {
             haptic.performHapticFeedback(HapticFeedbackType.Confirm)
             isLoginDialogOpen = false
             onEvent(AttendanceListEvent.DismissLogin)
+        }
+    }
+
+    LaunchedEffect(state.syncState) {
+        if (state.syncState is SyncUiState.Success) {
+            isYearTermDialogOpen = false
         }
     }
 
@@ -236,10 +244,10 @@ fun AttendanceListContent(
                         style = MaterialTheme.typography.titleLargeEmphasized,
                         modifier = Modifier.weight(1f)
                     )
-                    if(false)
                     IconButton(
                         onClick = {
-
+                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            isYearTermDialogOpen = true
                         },
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = Color.White.copy(alpha = 0.08f),
@@ -327,6 +335,23 @@ fun AttendanceListContent(
                 onEvent(AttendanceListEvent.Login(sapPassword))
             },
             syncState = state.loginState,
+            hazeState = hazeState
+        )
+    }
+
+    if (isYearTermDialogOpen) {
+        YearTermChangeDialogBox(
+            onDismiss = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                isYearTermDialogOpen = false
+            },
+            onConfirm = { year, term ->
+                haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                onEvent(AttendanceListEvent.ChangeYearTerm(year, term))
+            },
+            year = state.year,
+            term = state.term,
+            syncState = state.syncState,
             hazeState = hazeState
         )
     }

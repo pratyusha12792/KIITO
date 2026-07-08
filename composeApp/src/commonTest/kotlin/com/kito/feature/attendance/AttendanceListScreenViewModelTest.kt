@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -82,11 +83,18 @@ class AttendanceListScreenViewModelTest {
         repo = FakeAttendanceRepository()
         fakeCredentials = FakeCredentialsRepository()
         spySyncUseCase = SpySyncUseCase()
+        val changeYearTermUseCase = com.kito.core.sync.domain.usecase.ChangeYearTermUseCase(
+            prefs = prefsRepository,
+            credentialsRepository = fakeCredentials,
+            attendanceRepository = repo,
+            syncUseCase = spySyncUseCase
+        )
         vm = AttendanceListScreenViewModel(
             getAttendanceSummary = GetAttendanceSummaryUseCase(repo),
             prefs = prefsRepository,
             credentialsRepository = fakeCredentials,
             appSyncUseCase = spySyncUseCase,
+            changeYearTermUseCase = changeYearTermUseCase,
             connectivityRepository = FakeConnectivityRepository(),
             dispatcher = testDispatcher,
         )
@@ -259,6 +267,32 @@ class AttendanceListScreenViewModelTest {
         prefsRepository.setRequiredAttendance(85)
         advanceUntilIdle()
         assertEquals(85, vm.uiState.value.requiredAttendance)
+        job.cancel()
+    }
+
+    @Test
+    fun changeYearTerm_success_updatesPrefsDeletesAttendanceAndSyncs() = runTest(testDispatcher) {
+        prefsRepository.setUserRollNumber("123456")
+        fakeCredentials.saveSapPassword("pwd")
+        repo.emit(listOf(attendance())) // Seed attendance
+
+        val job = launch { vm.uiState.collect {} }
+        vm.changeYearTerm("2026", "020")
+        advanceUntilIdle()
+
+        // Verify preferences updated
+        assertEquals("2026", prefsRepository.academicYearFlow.first())
+        assertEquals("020", prefsRepository.termCodeFlow.first())
+        
+        // Verify local attendance database cleared
+        assertEquals(emptyList(), vm.uiState.value.attendance)
+
+        // Verify sync triggered
+        assertEquals("123456", spySyncUseCase.syncAllRoll)
+        assertEquals("pwd", spySyncUseCase.syncAllPassword)
+        assertEquals("2026", spySyncUseCase.syncAllYear)
+        assertEquals("020", spySyncUseCase.syncAllTerm)
+        assertIs<SyncUiState.Success>(vm.uiState.value.syncState)
         job.cancel()
     }
 }

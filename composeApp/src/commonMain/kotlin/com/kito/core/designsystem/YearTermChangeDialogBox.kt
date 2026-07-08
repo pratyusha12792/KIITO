@@ -1,4 +1,4 @@
-package com.kito.feature.settings.presentation.components
+package com.kito.core.designsystem
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +40,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kito.core.common.util.currentLocalDateTime
-import com.kito.core.designsystem.UIColors
 import com.kito.core.ui.state.SyncUiState
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeInputScale
