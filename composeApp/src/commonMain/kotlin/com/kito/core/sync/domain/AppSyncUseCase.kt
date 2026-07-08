@@ -15,6 +15,8 @@ import com.kito.core.platform.ErrorSanitizer
 import com.kito.sap.AttendanceResult
 import com.kito.sap.SapRepository
 import com.kito.sap.SubjectAttendance
+import com.kito.core.database.entity.ActiveSessionEntity
+import com.kito.core.datastore.domain.repository.PrefsRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.supervisorScope
@@ -29,6 +31,7 @@ class AppSyncUseCase(
     private val studentSectionRepository: StudentSectionRepository,
     private val attendanceRepository: AttendanceRepository,
     private val sapRepository: SapRepository,
+    private val prefs: PrefsRepository,
 ) : SyncUseCase {
     override suspend fun scheduleSync(roll: String): Result<Unit> = supervisorScope {
         runCatching {
@@ -36,6 +39,15 @@ class AppSyncUseCase(
                 syncRemoteDataSource.getStudentByRoll(roll)
             }.getOrElse { e ->
                 val error = SyncError.StudentFetchFailed(e.message ?: e::class.simpleName ?: "unknown")
+                ErrorSanitizer.log(error)
+                if (AppConfig.isDebug) e.printStackTrace()
+                throw SyncException(ErrorSanitizer.sanitize(error))
+            }
+
+            val activeSession = runCatching {
+                syncRemoteDataSource.getActiveSessionConfig()
+            }.getOrElse { e ->
+                val error = SyncError.StudentFetchFailed("Active session fetch failed: ${e.message}")
                 ErrorSanitizer.log(error)
                 if (AppConfig.isDebug) e.printStackTrace()
                 throw SyncException(ErrorSanitizer.sanitize(error))
@@ -62,6 +74,13 @@ class AppSyncUseCase(
                     transactor.immediateTransaction {
                         studentRepository.insertStudent(listOf(student))
                         sectionRepository.insertSection(timetable)
+                        db.activeSessionDao().insertActiveSession(
+                            ActiveSessionEntity(
+                                academic_year = activeSession.academic_year,
+                                term_code = activeSession.term_code,
+                                version = activeSession.version
+                            )
+                        )
                     }
                 }
             }.getOrElse { e ->
@@ -70,6 +89,11 @@ class AppSyncUseCase(
                 if (AppConfig.isDebug) e.printStackTrace()
                 throw SyncException(ErrorSanitizer.sanitize(error))
             }
+
+            runCatching {
+                prefs.setAcademicYear(activeSession.academic_year)
+                prefs.setTermCode(activeSession.term_code)
+            }.getOrThrow()
         }
     }
 
@@ -87,6 +111,17 @@ class AppSyncUseCase(
                 ErrorSanitizer.log(error)
                 if (AppConfig.isDebug) e.printStackTrace()
                 throw SyncException(ErrorSanitizer.sanitize(error))
+            }
+
+            val activeSessionDeferred = async {
+                runCatching {
+                    syncRemoteDataSource.getActiveSessionConfig()
+                }.getOrElse { e ->
+                    val error = SyncError.StudentFetchFailed("Active session fetch failed: ${e.message}")
+                    ErrorSanitizer.log(error)
+                    if (AppConfig.isDebug) e.printStackTrace()
+                    throw SyncException(ErrorSanitizer.sanitize(error))
+                }
             }
 
             val timetableDeferred = async {
@@ -129,6 +164,7 @@ class AppSyncUseCase(
                 }
             } else null
 
+            val activeSession = activeSessionDeferred.await()
             val timetable = timetableDeferred.await()
             val attendance = attendanceDeferred?.await()
 
@@ -144,6 +180,13 @@ class AppSyncUseCase(
                         }
                         studentRepository.insertStudent(listOf(student))
                         sectionRepository.insertSection(timetable)
+                        db.activeSessionDao().insertActiveSession(
+                            ActiveSessionEntity(
+                                academic_year = activeSession.academic_year,
+                                term_code = activeSession.term_code,
+                                version = activeSession.version
+                            )
+                        )
                     }
                 }
             }.getOrElse { e ->

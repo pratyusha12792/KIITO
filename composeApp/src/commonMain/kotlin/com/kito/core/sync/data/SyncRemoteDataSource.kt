@@ -25,6 +25,18 @@ class SyncRemoteDataSource(
         return result.first()
     }
 
+    suspend fun getActiveSessionConfig(): ActiveSessionConfig {
+        val result: List<ActiveSessionConfig> = client.get("rest/v1/active_session") {
+            parameter("select", "*")
+        }.body()
+
+        if (result.isEmpty()) {
+            throw IllegalStateException("Active session config not found in Supabase")
+        }
+
+        return result.first()
+    }
+
     suspend fun getTimetableForStudent(
         section: String,
         batch: String

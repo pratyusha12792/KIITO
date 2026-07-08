@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import com.kito.core.database.AppDB
+import com.kito.core.database.MIGRATION_1_2
 import com.kito.core.datastore.ProtoDatastoreRepository
 import com.kito.core.network.supabase.createSupabaseClient
 import com.kito.core.platform.AppSyncTrigger
@@ -38,7 +39,9 @@ val androidModule = module {
             androidContext(),
             AppDB::class.java,
             "kito_db"
-        ).build()
+        )
+        .addMigrations(MIGRATION_1_2)
+        .build()
     }
 
     // DAOs
@@ -46,6 +49,7 @@ val androidModule = module {
     single { get<AppDB>().studentDao() }
     single { get<AppDB>().sectionDao() }
     single { get<AppDB>().studentSectionDao() }
+    single { get<AppDB>().activeSessionDao() }
 
     // Supabase HttpClient (created via common function)
     single <HttpClient> { createSupabaseClient() }

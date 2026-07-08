@@ -9,6 +9,9 @@ import kotlinx.serialization.Serializable
 data class SectionEntity(
     @PrimaryKey
     val id: Int = 0,
+    val academic_year: String = "",
+    val term_code: String = "",
+    val version: Int = 0,
     val section: String = "",
     val day: String = "",
     val start_time: String = "",
