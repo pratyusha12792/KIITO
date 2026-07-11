@@ -45,10 +45,6 @@ val commonModule = module {
     single<ChangeYearTermUseCase>()
     single<ConnectivityRepository> { ConnectivityRepositoryImpl(get()) }
     single<CredentialsRepositoryImpl>() bind CredentialsRepository::class
-
-    // Supabase Auth (SDK) — auth/GoTrue only; separate from the raw REST client.
-    // create(::fn) registers SupabaseClient as a compiler-plugin-tracked provider so that
-    // get<SupabaseClient>() call sites (deep-link handlers) pass compile-time safety.
     single { create(::createSupabaseAuthClient) }
     single<AuthRepository> {
         SupabaseAuthRepository(
