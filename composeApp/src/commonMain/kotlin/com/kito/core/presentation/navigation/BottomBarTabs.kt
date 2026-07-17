@@ -82,7 +82,7 @@ fun BottomBarTabs(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = tab.icon, 
+                        imageVector = tab.icon,
                         contentDescription = "tab ${tab.title}",
                         tint = iconColor
                     )
