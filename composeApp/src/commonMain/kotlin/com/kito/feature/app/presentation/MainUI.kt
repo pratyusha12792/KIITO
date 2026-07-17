@@ -136,7 +136,7 @@ fun MainUI(
                 }
             }
         },
-        currentStartDestination // Default to Tabs, but we gate the UI until startDestination is non-null
+        currentStartDestination
     )
     val tabBackStack =  rememberNavBackStack(
         configuration = SavedStateConfiguration{
@@ -174,12 +174,19 @@ fun MainUI(
         }
     }
 
+    IosBottomBarBridge(
+        selectedTabIndex = selectedTabIndex,
+        visible = shouldShowBottomBar,
+        onTabSelected = { index -> tabBackStack.navigateTab(NavigationItems[index].destination) }
+    )
+
     val hazeState = rememberHazeState()
     Surface {
         Scaffold(
             containerColor = Color.Transparent,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
+                if (isAndroid()) {
                 AnimatedVisibility(
                     visible = shouldShowBottomBar,
                     enter = slideInVertically(
@@ -285,6 +292,7 @@ fun MainUI(
                             }
                         )
                     }
+                }
                 }
             }
         ) {
