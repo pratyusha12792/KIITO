@@ -12,17 +12,11 @@ import org.koin.core.annotation.Provided
 class SyncRemoteDataSource(
     @Provided private val client: HttpClient
 ) {
-    suspend fun getStudentByRoll(rollNo: String): StudentEntity {
-        val result: List<StudentEntity> = client.get("rest/v1/students") {
+    suspend fun getStudentByRoll(rollNo: String): StudentEntity? {
+        return client.get("rest/v1/students") {
             parameter("roll_no", "eq.$rollNo")
             parameter("select", "*")
-        }.body()
-
-        if (result.isEmpty()) {
-            throw IllegalStateException("Student not found in Supabase")
-        }
-
-        return result.first()
+        }.body<List<StudentEntity>>().firstOrNull()
     }
 
     suspend fun getActiveSessionConfig(): ActiveSessionConfig {
@@ -46,5 +40,13 @@ class SyncRemoteDataSource(
             parameter("batch", "eq.$batch")
             parameter("select", "*")
         }.body()
+    }
+
+    suspend fun getStudentElective(rollNo: String): StudentElectiveConfig? {
+        val result: List<StudentElectiveConfig> = client.get("rest/v1/student_elective") {
+            parameter("roll_no", "eq.$rollNo")
+            parameter("select", "*")
+        }.body()
+        return result.firstOrNull()
     }
 }

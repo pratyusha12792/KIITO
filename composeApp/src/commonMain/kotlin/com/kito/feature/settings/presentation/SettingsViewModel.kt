@@ -130,8 +130,11 @@ class SettingsViewModel(
                 prefs.setUserRollNumber(roll)
                 credentialsRepository.clearSapPassword()
                 attendanceRepository.deleteAllAttendance()
-                appSyncUseCase.scheduleSync(
-                    roll = roll
+                appSyncUseCase.syncAll(
+                    roll = roll,
+                    sapPassword = "",
+                    year = prefs.academicYearFlow.first(),
+                    term = prefs.termCodeFlow.first()
                 )
             }
             result.fold(

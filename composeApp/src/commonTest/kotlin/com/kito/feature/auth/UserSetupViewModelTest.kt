@@ -51,12 +51,18 @@ class UserSetupViewModelTest {
     private lateinit var vm: UserSetupViewModel
 
     class SpySyncUseCase : SyncUseCase {
-        var scheduleSyncRoll: String? = null
-        override suspend fun scheduleSync(roll: String): Result<Unit> {
-            scheduleSyncRoll = roll
+        var syncAllRoll: String? = null
+        var syncAllPassword: String? = null
+        var syncAllYear: String? = null
+        var syncAllTerm: String? = null
+
+        override suspend fun syncAll(roll: String, sapPassword: String, year: String, term: String): Result<Unit> {
+            syncAllRoll = roll
+            syncAllPassword = sapPassword
+            syncAllYear = year
+            syncAllTerm = term
             return Result.success(Unit)
         }
-        override suspend fun syncAll(roll: String, sapPassword: String, year: String, term: String): Result<Unit> = Result.success(Unit)
     }
 
     class MutableFakeAuthRepository : AuthRepository {
@@ -164,7 +170,10 @@ class UserSetupViewModelTest {
         assertEquals("123456", prefsRepository.userRollFlow.first())
         assertEquals("2026", prefsRepository.academicYearFlow.first())
         assertEquals("010", prefsRepository.termCodeFlow.first())
-        assertEquals("123456", spySyncUseCase.scheduleSyncRoll)
+        assertEquals("123456", spySyncUseCase.syncAllRoll)
+        assertEquals("", spySyncUseCase.syncAllPassword)
+        assertEquals("2026", spySyncUseCase.syncAllYear)
+        assertEquals("010", spySyncUseCase.syncAllTerm)
         assertTrue(prefsRepository.userSetupDoneFlow.first())
 
         assertEquals(LoadingSource.None, vm.loadingSource.value)
@@ -178,7 +187,8 @@ class UserSetupViewModelTest {
 
         assertEquals("Jane Doe", prefsRepository.userNameFlow.first())
         assertEquals("78910", prefsRepository.userRollFlow.first())
-        assertEquals("78910", spySyncUseCase.scheduleSyncRoll)
+        assertEquals("78910", spySyncUseCase.syncAllRoll)
+        assertEquals("", spySyncUseCase.syncAllPassword)
         assertTrue(prefsRepository.userSetupDoneFlow.first())
 
         assertEquals(LoadingSource.None, vm.loadingSource.value)
@@ -223,5 +233,38 @@ class UserSetupViewModelTest {
         assertIs<SetupState.Idle>(vm.setupState.value)
 
         job.cancel()
+    }
+
+    @Test
+    fun completeSetup_syncAllReceivesEmptyPassword_studentNotInSupabaseStillSucceeds() = runTest(testDispatcher) {
+        // syncAll is called with empty password — simulates student not yet in Supabase DB.
+        // Setup should still reach Success because the VM does not check Result from syncAll.
+        vm.completeSetup("New Student", "999001", "2025", "010")
+        advanceUntilIdle()
+
+        assertEquals("999001", spySyncUseCase.syncAllRoll)
+        assertEquals("", spySyncUseCase.syncAllPassword)
+        assertIs<SetupState.Success>(vm.setupState.value)
+    }
+
+    @Test
+    fun completeSetup_differentRollNumbers_eachCallPassesCorrectRoll() = runTest(testDispatcher) {
+        vm.completeSetup("Alice", "100001", "2025", "010")
+        advanceUntilIdle()
+        assertEquals("100001", spySyncUseCase.syncAllRoll)
+
+        spySyncUseCase = SpySyncUseCase()
+        vm = UserSetupViewModel(
+            prefs = prefsRepository,
+            credentialsRepository = fakeCredentials,
+            appSyncUseCase = spySyncUseCase,
+            authRepository = fakeAuthRepository,
+            dispatcher = testDispatcher,
+        )
+
+        vm.completeSetup("Bob", "200002", "2025", "020")
+        advanceUntilIdle()
+        assertEquals("200002", spySyncUseCase.syncAllRoll)
+        assertEquals("020", spySyncUseCase.syncAllTerm)
     }
 }

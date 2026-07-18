@@ -19,4 +19,5 @@ interface SectionDAO {
 
     @Query("DELETE FROM SectionEntity")
     suspend fun deleteAllSection()
+
 }
