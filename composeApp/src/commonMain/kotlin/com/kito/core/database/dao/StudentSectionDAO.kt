@@ -10,7 +10,7 @@ import org.koin.core.annotation.Provided
 @Dao
 interface StudentSectionDAO {
     @Query("""
-        SELECT 
+        SELECT
             sec.id AS sectionId,
             stu.roll_no AS rollNo,
             sec.section AS section,
@@ -30,7 +30,31 @@ interface StudentSectionDAO {
            AND sec.version = act.version
         WHERE stu.roll_no = :rollNo
           AND sec.day = :day
-        ORDER BY sec.start_time
+          AND sec.source = 'core'
+
+        UNION
+
+        SELECT
+            sec.id AS sectionId,
+            stu.roll_no AS rollNo,
+            sec.section AS section,
+            sec.batch AS batch,
+            sec.day AS day,
+            sec.start_time AS startTime,
+            sec.end_time AS endTime,
+            sec.subject AS subject,
+            sec.room AS room
+        FROM SectionEntity sec
+        JOIN StudentElectiveEntity selu ON (sec.section = selu.elective_1 OR sec.section = selu.elective_2)
+        JOIN StudentEntity stu ON selu.roll_no = stu.roll_no
+        JOIN ActiveSessionEntity act
+            ON sec.academic_year = act.academic_year
+           AND sec.term_code = act.term_code
+           AND sec.version = act.version
+        WHERE stu.roll_no = :rollNo
+          AND sec.day = :day
+
+        ORDER BY startTime
     """)
     fun getScheduleForStudent(
         rollNo: String,
@@ -38,7 +62,7 @@ interface StudentSectionDAO {
     ): Flow<List<StudentSectionEntity>>
 
     @Query("""
-        SELECT 
+        SELECT
             sec.id AS sectionId,
             stu.roll_no AS rollNo,
             sec.section AS section,
@@ -57,7 +81,30 @@ interface StudentSectionDAO {
            AND sec.term_code = act.term_code
            AND sec.version = act.version
         WHERE stu.roll_no = :rollNo
-        ORDER BY sec.start_time
+          AND sec.source = 'core'
+
+        UNION
+
+        SELECT
+            sec.id AS sectionId,
+            stu.roll_no AS rollNo,
+            sec.section AS section,
+            sec.batch AS batch,
+            sec.day AS day,
+            sec.start_time AS startTime,
+            sec.end_time AS endTime,
+            sec.subject AS subject,
+            sec.room AS room
+        FROM SectionEntity sec
+        JOIN StudentElectiveEntity selu ON (sec.section = selu.elective_1 OR sec.section = selu.elective_2)
+        JOIN StudentEntity stu ON selu.roll_no = stu.roll_no
+        JOIN ActiveSessionEntity act
+            ON sec.academic_year = act.academic_year
+           AND sec.term_code = act.term_code
+           AND sec.version = act.version
+        WHERE stu.roll_no = :rollNo
+
+        ORDER BY startTime
     """)
     fun getAllScheduleForStudent(
         rollNo: String

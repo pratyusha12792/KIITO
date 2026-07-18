@@ -16,6 +16,8 @@ import com.kito.sap.AttendanceResult
 import com.kito.sap.SapRepository
 import com.kito.sap.SubjectAttendance
 import com.kito.core.database.entity.ActiveSessionEntity
+import com.kito.core.database.entity.SectionEntity
+import com.kito.core.database.entity.StudentElectiveEntity
 import com.kito.core.datastore.domain.repository.PrefsRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -69,11 +71,33 @@ class AppSyncUseCase(
                 throw SyncException(ErrorSanitizer.sanitize(error))
             }
 
+            val electiveFetch: ElectiveFetch = if (
+                student.batch == "batch_3" && activeSession.term_code == "010"
+            ) {
+                runCatching {
+                    val elective = syncRemoteDataSource.getStudentElective(roll)
+                    if (elective != null) {
+                        ElectiveFetch(
+                            timetable = syncRemoteDataSource.getTimetableForStudent(elective.elective_1, elective.batch)
+                                .map { it.copy(source = "elective_1") } +
+                                syncRemoteDataSource.getTimetableForStudent(elective.elective_2, elective.batch)
+                                    .map { it.copy(source = "elective_2") },
+                            entity = StudentElectiveEntity(
+                                roll_no = elective.roll_no,
+                                elective_1 = elective.elective_1,
+                                elective_2 = elective.elective_2,
+                                batch = elective.batch
+                            )
+                        )
+                    } else ElectiveFetch(emptyList(), null)
+                }.getOrElse { ElectiveFetch(emptyList(), null) }
+            } else ElectiveFetch(emptyList(), null)
+
             runCatching {
                 db.useWriterConnection { transactor ->
                     transactor.immediateTransaction {
                         studentRepository.insertStudent(listOf(student))
-                        sectionRepository.insertSection(timetable)
+                        sectionRepository.insertSection(timetable + electiveFetch.timetable)
                         db.activeSessionDao().insertActiveSession(
                             ActiveSessionEntity(
                                 academic_year = activeSession.academic_year,
@@ -81,6 +105,7 @@ class AppSyncUseCase(
                                 version = activeSession.version
                             )
                         )
+                        electiveFetch.entity?.let { db.studentElectiveDao().upsertStudentElective(it) }
                     }
                 }
             }.getOrElse { e ->
@@ -94,6 +119,16 @@ class AppSyncUseCase(
                 prefs.setAcademicYear(activeSession.academic_year)
                 prefs.setTermCode(activeSession.term_code)
             }.getOrThrow()
+
+            runCatching {
+                val sections = studentSectionRepository.getAllScheduleForStudent(rollNo = roll).first()
+                syncTrigger.onSyncComplete(roll, sections)
+            }.getOrElse { e ->
+                val error = SyncError.SyncTriggerFailed(e.message ?: e::class.simpleName ?: "unknown")
+                ErrorSanitizer.log(error)
+                if (AppConfig.isDebug) e.printStackTrace()
+                throw SyncException(ErrorSanitizer.sanitize(error))
+            }
         }
     }
 
@@ -168,6 +203,28 @@ class AppSyncUseCase(
             val timetable = timetableDeferred.await()
             val attendance = attendanceDeferred?.await()
 
+            val electiveFetchAll: ElectiveFetch = if (
+                student.batch == "batch_3" && activeSession.term_code == "010"
+            ) {
+                runCatching {
+                    val elective = syncRemoteDataSource.getStudentElective(roll)
+                    if (elective != null) {
+                        ElectiveFetch(
+                            timetable = syncRemoteDataSource.getTimetableForStudent(elective.elective_1, elective.batch)
+                                .map { it.copy(source = "elective_1") } +
+                                syncRemoteDataSource.getTimetableForStudent(elective.elective_2, elective.batch)
+                                    .map { it.copy(source = "elective_2") },
+                            entity = StudentElectiveEntity(
+                                roll_no = elective.roll_no,
+                                elective_1 = elective.elective_1,
+                                elective_2 = elective.elective_2,
+                                batch = elective.batch
+                            )
+                        )
+                    } else ElectiveFetch(emptyList(), null)
+                }.getOrElse { ElectiveFetch(emptyList(), null) }
+            } else ElectiveFetch(emptyList(), null)
+
             runCatching {
                 db.useWriterConnection { transactor ->
                     transactor.immediateTransaction {
@@ -179,7 +236,7 @@ class AppSyncUseCase(
                             )
                         }
                         studentRepository.insertStudent(listOf(student))
-                        sectionRepository.insertSection(timetable)
+                        sectionRepository.insertSection(timetable + electiveFetchAll.timetable)
                         db.activeSessionDao().insertActiveSession(
                             ActiveSessionEntity(
                                 academic_year = activeSession.academic_year,
@@ -187,6 +244,7 @@ class AppSyncUseCase(
                                 version = activeSession.version
                             )
                         )
+                        electiveFetchAll.entity?.let { db.studentElectiveDao().upsertStudentElective(it) }
                     }
                 }
             }.getOrElse { e ->
@@ -209,6 +267,11 @@ class AppSyncUseCase(
     }
 }
 
+
+private data class ElectiveFetch(
+    val timetable: List<SectionEntity>,
+    val entity: StudentElectiveEntity?
+)
 
 class SyncException(message: String) : Exception(message)
 

@@ -19,4 +19,5 @@ data class SectionEntity(
     val subject: String = "",
     val room: String? = "",
     val batch: String = "",
+    val source: String = "core",
 )

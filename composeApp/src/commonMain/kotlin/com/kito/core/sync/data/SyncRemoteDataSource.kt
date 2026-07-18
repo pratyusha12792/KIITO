@@ -47,4 +47,12 @@ class SyncRemoteDataSource(
             parameter("select", "*")
         }.body()
     }
+
+    suspend fun getStudentElective(rollNo: String): StudentElectiveConfig? {
+        val result: List<StudentElectiveConfig> = client.get("rest/v1/student_elective") {
+            parameter("roll_no", "eq.$rollNo")
+            parameter("select", "*")
+        }.body()
+        return result.firstOrNull()
+    }
 }

@@ -13,4 +13,5 @@ class SectionRepository(
 
     suspend fun deleteAllSection() =
         sectionDao.deleteAllSection()
+
 }
