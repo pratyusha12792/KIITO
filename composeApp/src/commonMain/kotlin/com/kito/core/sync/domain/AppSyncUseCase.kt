@@ -35,103 +35,6 @@ class AppSyncUseCase(
     private val sapRepository: SapRepository,
     private val prefs: PrefsRepository,
 ) : SyncUseCase {
-    override suspend fun scheduleSync(roll: String): Result<Unit> = supervisorScope {
-        runCatching {
-            val student = runCatching {
-                syncRemoteDataSource.getStudentByRoll(roll)
-            }.getOrElse { e ->
-                val error = SyncError.StudentFetchFailed(e.message ?: e::class.simpleName ?: "unknown")
-                ErrorSanitizer.log(error)
-                if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
-            }
-
-            val activeSession = runCatching {
-                syncRemoteDataSource.getActiveSessionConfig()
-            }.getOrElse { e ->
-                val error = SyncError.StudentFetchFailed("Active session fetch failed: ${e.message}")
-                ErrorSanitizer.log(error)
-                if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
-            }
-
-            val timetable = runCatching {
-                syncRemoteDataSource.getTimetableForStudent(
-                    section = student.section,
-                    batch = student.batch
-                )
-            }.getOrElse { e ->
-                val error = SyncError.TimetableFetchFailed(
-                    section = student.section,
-                    batch = student.batch,
-                    cause = e.message ?: e::class.simpleName ?: "unknown"
-                )
-                ErrorSanitizer.log(error)
-                if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
-            }
-
-            val electiveFetch: ElectiveFetch = if (
-                student.batch == "batch_3" && activeSession.term_code == "010"
-            ) {
-                runCatching {
-                    val elective = syncRemoteDataSource.getStudentElective(roll)
-                    if (elective != null) {
-                        ElectiveFetch(
-                            timetable = syncRemoteDataSource.getTimetableForStudent(elective.elective_1, elective.batch)
-                                .map { it.copy(source = "elective_1") } +
-                                syncRemoteDataSource.getTimetableForStudent(elective.elective_2, elective.batch)
-                                    .map { it.copy(source = "elective_2") },
-                            entity = StudentElectiveEntity(
-                                roll_no = elective.roll_no,
-                                elective_1 = elective.elective_1,
-                                elective_2 = elective.elective_2,
-                                batch = elective.batch
-                            )
-                        )
-                    } else ElectiveFetch(emptyList(), null)
-                }.getOrElse { ElectiveFetch(emptyList(), null) }
-            } else ElectiveFetch(emptyList(), null)
-
-            runCatching {
-                db.useWriterConnection { transactor ->
-                    transactor.immediateTransaction {
-                        studentRepository.insertStudent(listOf(student))
-                        sectionRepository.insertSection(timetable + electiveFetch.timetable)
-                        db.activeSessionDao().insertActiveSession(
-                            ActiveSessionEntity(
-                                academic_year = activeSession.academic_year,
-                                term_code = activeSession.term_code,
-                                version = activeSession.version
-                            )
-                        )
-                        electiveFetch.entity?.let { db.studentElectiveDao().upsertStudentElective(it) }
-                    }
-                }
-            }.getOrElse { e ->
-                val error = SyncError.DatabaseWriteFailed(e.message ?: e::class.simpleName ?: "unknown")
-                ErrorSanitizer.log(error)
-                if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
-            }
-
-            runCatching {
-                prefs.setAcademicYear(activeSession.academic_year)
-                prefs.setTermCode(activeSession.term_code)
-            }.getOrThrow()
-
-            runCatching {
-                val sections = studentSectionRepository.getAllScheduleForStudent(rollNo = roll).first()
-                syncTrigger.onSyncComplete(roll, sections)
-            }.getOrElse { e ->
-                val error = SyncError.SyncTriggerFailed(e.message ?: e::class.simpleName ?: "unknown")
-                ErrorSanitizer.log(error)
-                if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
-            }
-        }
-    }
-
     override suspend fun syncAll(
         roll: String,
         sapPassword: String,
@@ -142,13 +45,11 @@ class AppSyncUseCase(
             val student = runCatching {
                 syncRemoteDataSource.getStudentByRoll(roll)
             }.getOrElse { e ->
-                val error = SyncError.StudentFetchFailed(e.message ?: e::class.simpleName ?: "unknown")
-                ErrorSanitizer.log(error)
                 if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
+                null
             }
 
-            val activeSessionDeferred = async {
+            val activeSessionDeferred = if (student != null) async {
                 runCatching {
                     syncRemoteDataSource.getActiveSessionConfig()
                 }.getOrElse { e ->
@@ -157,9 +58,9 @@ class AppSyncUseCase(
                     if (AppConfig.isDebug) e.printStackTrace()
                     throw SyncException(ErrorSanitizer.sanitize(error))
                 }
-            }
+            } else null
 
-            val timetableDeferred = async {
+            val timetableDeferred = if (student != null) async {
                 runCatching {
                     syncRemoteDataSource.getTimetableForStudent(
                         section = student.section,
@@ -175,7 +76,7 @@ class AppSyncUseCase(
                     if (AppConfig.isDebug) e.printStackTrace()
                     throw SyncException(ErrorSanitizer.sanitize(error))
                 }
-            }
+            } else null
 
             val attendanceDeferred = if (sapPassword.isNotEmpty()) {
                 async {
@@ -188,9 +89,6 @@ class AppSyncUseCase(
                         is AttendanceResult.Success -> response.data
 
                         is AttendanceResult.Error -> {
-                            // response.message is already sanitized by ErrorSanitizer inside
-                            // SapPortalClient — we wrap it so syncAll's Result<Unit> carries
-                            // a clean message without re-exposing any internal details.
                             val error = SyncError.AttendanceSyncFailed(response.message)
                             ErrorSanitizer.log(error)
                             throw SyncException(ErrorSanitizer.sanitize(error))
@@ -199,11 +97,12 @@ class AppSyncUseCase(
                 }
             } else null
 
-            val activeSession = activeSessionDeferred.await()
-            val timetable = timetableDeferred.await()
+            val activeSession = activeSessionDeferred?.await()
+            val timetable = timetableDeferred?.await()
             val attendance = attendanceDeferred?.await()
 
             val electiveFetchAll: ElectiveFetch = if (
+                student != null && activeSession != null &&
                 student.batch == "batch_3" && activeSession.term_code == "010"
             ) {
                 runCatching {
@@ -235,16 +134,18 @@ class AppSyncUseCase(
                                 term
                             )
                         }
-                        studentRepository.insertStudent(listOf(student))
-                        sectionRepository.insertSection(timetable + electiveFetchAll.timetable)
-                        db.activeSessionDao().insertActiveSession(
-                            ActiveSessionEntity(
-                                academic_year = activeSession.academic_year,
-                                term_code = activeSession.term_code,
-                                version = activeSession.version
+                        if (student != null && activeSession != null && timetable != null) {
+                            studentRepository.insertStudent(listOf(student))
+                            sectionRepository.insertSection(timetable + electiveFetchAll.timetable)
+                            db.activeSessionDao().insertActiveSession(
+                                ActiveSessionEntity(
+                                    academic_year = activeSession.academic_year,
+                                    term_code = activeSession.term_code,
+                                    version = activeSession.version
+                                )
                             )
-                        )
-                        electiveFetchAll.entity?.let { db.studentElectiveDao().upsertStudentElective(it) }
+                            electiveFetchAll.entity?.let { db.studentElectiveDao().upsertStudentElective(it) }
+                        }
                     }
                 }
             }.getOrElse { e ->
@@ -254,14 +155,16 @@ class AppSyncUseCase(
                 throw SyncException(ErrorSanitizer.sanitize(error))
             }
 
-            runCatching {
-                val sections = studentSectionRepository.getAllScheduleForStudent(rollNo = roll).first()
-                syncTrigger.onSyncComplete(roll, sections)
-            }.getOrElse { e ->
-                val error = SyncError.SyncTriggerFailed(e.message ?: e::class.simpleName ?: "unknown")
-                ErrorSanitizer.log(error)
-                if (AppConfig.isDebug) e.printStackTrace()
-                throw SyncException(ErrorSanitizer.sanitize(error))
+            if (student != null) {
+                runCatching {
+                    val sections = studentSectionRepository.getAllScheduleForStudent(rollNo = roll).first()
+                    syncTrigger.onSyncComplete(roll, sections)
+                }.getOrElse { e ->
+                    val error = SyncError.SyncTriggerFailed(e.message ?: e::class.simpleName ?: "unknown")
+                    ErrorSanitizer.log(error)
+                    if (AppConfig.isDebug) e.printStackTrace()
+                    throw SyncException(ErrorSanitizer.sanitize(error))
+                }
             }
         }
     }
@@ -301,7 +204,7 @@ sealed class SyncError(
 
     class AttendanceSyncFailed(sanitizedMessage: String) : SyncError(
         internalMessage = "SAP attendance fetch failed (message already sanitized): $sanitizedMessage",
-        userMessage = sanitizedMessage, // already safe — came from ErrorSanitizer.sanitize()
+        userMessage = sanitizedMessage,
         code = "SYNC_004"
     )
 

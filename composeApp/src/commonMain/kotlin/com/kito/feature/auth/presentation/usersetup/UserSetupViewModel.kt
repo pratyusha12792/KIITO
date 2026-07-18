@@ -134,7 +134,7 @@ class UserSetupViewModel(
                 setUserRoll(roll)
                 setAcademicYear(year)
                 setTermCode(term)
-                appSyncUseCase.scheduleSync(roll)
+                appSyncUseCase.syncAll(roll, "", year, term)
                 setUserSetupDone()
                 _loadingSource.value = LoadingSource.None
                 _setupState.value = SetupState.Success

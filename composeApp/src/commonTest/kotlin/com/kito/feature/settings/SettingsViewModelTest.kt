@@ -60,17 +60,11 @@ class SettingsViewModelTest {
     }
 
     class SpySyncUseCase : SyncUseCase {
-        var scheduleSyncRoll: String? = null
         var syncAllRoll: String? = null
         var syncAllPassword: String? = null
         var syncAllYear: String? = null
         var syncAllTerm: String? = null
         var result = Result.success(Unit)
-
-        override suspend fun scheduleSync(roll: String): Result<Unit> {
-            scheduleSyncRoll = roll
-            return result
-        }
 
         override suspend fun syncAll(
             roll: String,
@@ -229,7 +223,8 @@ class SettingsViewModelTest {
         assertEquals("999999", prefsRepository.userRollFlow.first())
         assertEquals("", fakeCredentials.getSapPassword())
         assertTrue(fakeAttendanceRepository.observeAttendance().first().isEmpty())
-        assertEquals("999999", spySyncUseCase.scheduleSyncRoll)
+        assertEquals("999999", spySyncUseCase.syncAllRoll)
+        assertEquals("", spySyncUseCase.syncAllPassword)
         assertIs<SyncUiState.Success>(v.syncState.value)
     }
 
@@ -341,5 +336,34 @@ class SettingsViewModelTest {
 
         assertTrue(prefsRepository.notificationStateFlow.first())
         assertTrue(fakeNotificationController.syncCalled)
+    }
+
+    @Test
+    fun changeRoll_passesCurrentPrefsYearTermToSyncAll() = runTest(testDispatcher) {
+        val v = vm()
+        prefsRepository.setAcademicYear("2025")
+        prefsRepository.setTermCode("010")
+
+        v.onEvent(SettingsEvent.ChangeRoll("111111"))
+        advanceUntilIdle()
+
+        assertEquals("111111", spySyncUseCase.syncAllRoll)
+        assertEquals("", spySyncUseCase.syncAllPassword)
+        assertEquals("2025", spySyncUseCase.syncAllYear)
+        assertEquals("010", spySyncUseCase.syncAllTerm)
+        assertIs<SyncUiState.Success>(v.syncState.value)
+    }
+
+    @Test
+    fun changeRoll_syncAllEmptyPassword_neverPassesSapCredential() = runTest(testDispatcher) {
+        val v = vm()
+        fakeCredentials.saveSapPassword("existing_sap_password")
+
+        v.onEvent(SettingsEvent.ChangeRoll("222222"))
+        advanceUntilIdle()
+
+        // After changeRoll, SAP password is cleared AND syncAll is called with empty password
+        assertEquals("", fakeCredentials.getSapPassword())
+        assertEquals("", spySyncUseCase.syncAllPassword)
     }
 }

@@ -54,8 +54,6 @@ class AttendanceListScreenViewModelTest {
         var syncAllTerm: String? = null
         var result = Result.success(Unit)
 
-        override suspend fun scheduleSync(roll: String): Result<Unit> = Result.success(Unit)
-
         override suspend fun syncAll(
             roll: String,
             sapPassword: String,
