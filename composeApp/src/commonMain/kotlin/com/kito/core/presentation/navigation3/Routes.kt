@@ -46,6 +46,9 @@ sealed interface Routes: NavKey {
         val restaurantRating: Float,
         val browseOnly: Boolean
     ) : Routes, NavKey
+
+    @Serializable
+    object Faculty : Routes, NavKey
 }
 
 @Serializable
@@ -56,9 +59,6 @@ sealed interface TabRoutes: NavKey {
 
     @Serializable
     object Attendance : TabRoutes,NavKey
-
-    @Serializable
-    object Faculty : TabRoutes,NavKey
 
     @Serializable
     object Profile : TabRoutes,NavKey

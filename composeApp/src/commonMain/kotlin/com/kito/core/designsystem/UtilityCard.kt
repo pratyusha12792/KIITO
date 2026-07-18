@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Assignment
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.School
 import androidx.compose.material.icons.rounded.EventAvailable
 import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -101,6 +102,19 @@ fun getUtilityList(
                     )
                 ),
                 destination = Routes.FriendView
+            ),
+            Utilities(
+                title = "Faculty",
+                iconVector = Icons.Rounded.School,
+                itemBoxColor = Color(0xFF1E4040),
+                textColor = Color(0xFFC1F0F0),
+                iconGradient = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF7AC6C6),
+                        Color(0xFF2A5C5C)
+                    )
+                ),
+                destination = Routes.Faculty
             ),
             Utilities(
                 title = "Holiday List",

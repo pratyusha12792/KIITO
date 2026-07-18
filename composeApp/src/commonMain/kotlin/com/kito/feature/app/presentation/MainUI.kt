@@ -144,7 +144,6 @@ fun MainUI(
                 polymorphic(NavKey::class){
                     subclass(TabRoutes.Home::class, TabRoutes.Home.serializer())
                     subclass(TabRoutes.Profile::class, TabRoutes.Profile.serializer())
-                    subclass(TabRoutes.Faculty::class, TabRoutes.Faculty.serializer())
                     subclass(TabRoutes.Attendance::class, TabRoutes.Attendance.serializer())
                 }
             }
@@ -168,8 +167,7 @@ fun MainUI(
         selectedTabIndex = when {
             tabBackStack.last() == TabRoutes.Home -> 0
             tabBackStack.last() == TabRoutes.Attendance -> 1
-            tabBackStack.last() == TabRoutes.Faculty -> 2
-            tabBackStack.last() == TabRoutes.Profile -> 3
+            tabBackStack.last() == TabRoutes.Profile -> 2
             else -> selectedTabIndex
         }
     }

@@ -4,8 +4,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.runComposeUiTest
 import com.kito.core.ui.state.SyncUiState
 import com.kito.feature.settings.presentation.SettingsContent
@@ -55,6 +57,7 @@ class SettingsUiTest {
             )
         }
 
+        onNodeWithTag("settings_list").performScrollToNode(hasText("Login"))
         onNodeWithText("Login").assertIsDisplayed()
         onNodeWithText("Login to SAP").assertIsDisplayed()
     }
@@ -78,6 +81,7 @@ class SettingsUiTest {
             )
         }
 
+        onNodeWithTag("settings_list").performScrollToNode(hasText("Logout"))
         onNodeWithText("Logout").assertIsDisplayed()
         onNodeWithText("Logout of SAP").assertIsDisplayed()
     }

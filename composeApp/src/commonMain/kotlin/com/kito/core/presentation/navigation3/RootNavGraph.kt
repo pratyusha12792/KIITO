@@ -23,6 +23,7 @@ import com.kito.feature.auth.presentation.onboarding.OnBoardingScreen
 import com.kito.feature.auth.presentation.usersetup.UserSetupScreen
 import com.kito.feature.exam.presentation.UpcomingExamScreen
 import com.kito.feature.faculty.presentation.FacultyDetailScreen
+import com.kito.feature.faculty.presentation.FacultyScreen
 import com.kito.feature.friendview.presentation.FriendView
 import com.kito.feature.gpa.presentation.GPAScreen
 import com.kito.feature.holiday.presentation.HolidayListScreen
@@ -110,6 +111,9 @@ fun RootNavGraph(
                         UpcomingExamScreen(
                             onBack = { rootNavBackStack.removeAt(rootNavBackStack.lastIndex) }
                         )
+                    }
+                    entry<Routes.Faculty> {
+                        FacultyScreen(rootNavBackStack = rootNavBackStack)
                     }
                     entry<Routes.FacultyDetail> {
                         FacultyDetailScreen(
