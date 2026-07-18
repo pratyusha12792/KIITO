@@ -74,15 +74,17 @@ fun FacultyCard(
                     )
                 }
 
-                IconButton(
-                    onClick = { onFacultyClick(faculty) }
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Open",
-                        tint = uiColors.textSecondary,
-                        modifier = Modifier.size(35.dp)
-                    )
+                if (false) {
+                    IconButton(
+                        onClick = { onFacultyClick(faculty) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Open",
+                            tint = uiColors.textSecondary,
+                            modifier = Modifier.size(35.dp)
+                        )
+                    }
                 }
             }
         }

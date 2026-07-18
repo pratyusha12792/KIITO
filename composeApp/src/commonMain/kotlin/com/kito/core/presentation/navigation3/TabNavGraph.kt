@@ -13,7 +13,6 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.kito.core.designsystem.ExpressiveEasing
 import com.kito.feature.attendance.presentation.AttendanceListScreen
-import com.kito.feature.faculty.presentation.FacultyScreen
 import com.kito.feature.home.presentation.HomeScreen
 import com.kito.feature.settings.presentation.SettingsScreen
 
@@ -49,11 +48,6 @@ fun TabNavGraph(
             }
             entry<TabRoutes.Attendance> {
                 AttendanceListScreen()
-            }
-            entry<TabRoutes.Faculty> {
-                FacultyScreen(
-                    rootNavBackStack = rootNavStack
-                )
             }
             entry<TabRoutes.Profile> {
                 SettingsScreen(

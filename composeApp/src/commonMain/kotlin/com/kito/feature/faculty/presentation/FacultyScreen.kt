@@ -110,9 +110,9 @@ fun FacultyScreen(
         onClearSearchResult = viewModel::clearSearchResult,
         onGetSearchResult = viewModel::getSearchResult,
         onFacultyClick = { faculty ->
-            rootNavBackStack.add(
-                Routes.FacultyDetail(facultyId = faculty.id)
-            )
+            if (false) {
+                rootNavBackStack.add(Routes.FacultyDetail(facultyId = faculty.id))
+            }
         }
     )
 }
